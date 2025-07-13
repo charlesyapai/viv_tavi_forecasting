@@ -6,7 +6,7 @@ years:
 
 # --- PROCEDURE COUNTS (external CSV paths) ------------------
 procedure_counts:
-  redo_savr: data/registry_redo_savr.csv
+  savr:       data/registry_savr.csv
   tavi:       data/registry_tavi.csv
 
 # --- VALVE DURABILITY ASSUMPTIONS ---------------------------
