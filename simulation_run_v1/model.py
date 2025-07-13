@@ -1,24 +1,50 @@
 #!/usr/bin/env python
 """
-Monte-Carlo engine for forecasting ViV-TAVI demand.
+Monte-Carlo engine for forecasting ViV-TAVI demand
+=================================================
 
-Usage:
-    python model.py --config config.yaml
+  python model.py --config config.yaml [--log-level INFO]
+
+Key stages and what is logged
+-----------------------------
+1.  Config load  – paths found / missing
+2.  Per run:      total index patients   →  total viable failures
+3.  Penetration:  candidates × penetration
+4.  Redo-SAVR:    after_pen × (1 - redo_rate)
+5.  Aggregation:  mean ± sd across runs written to CSV
 """
 
 from __future__ import annotations
 import argparse
 import yaml
+import logging
 from pathlib import Path
+from typing import Dict, Tuple, Optional
+
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
-from typing import Dict, Tuple
 from pydantic import BaseModel, validator
+from scipy.stats import norm
 
 
 # ---------------------------------------------------------------------------
-# 1. Configuration schema ----------------------------------------------------
+# 0.  Logging helper ---------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+def setup_logging(level: str = "INFO"):
+    numeric = getattr(logging, level.upper(), logging.INFO)
+    logging.basicConfig(
+        level=numeric,
+        format="%(asctime)s | %(levelname)-7s | %(message)s",
+        datefmt="%H:%M:%S"
+    )
+
+
+log = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# 1.  Configuration schema ---------------------------------------------------
 # ---------------------------------------------------------------------------
 
 class DurabilityMode(BaseModel):
@@ -34,71 +60,68 @@ class Config(BaseModel):
     survival_curves: Dict[str, Dict[str, float]]
     risk_mix: Dict[str, Dict[str, float] | Dict[str, Dict[str, float]]]
     penetration: Dict[str, Dict[str, float]]
-    redo_procedures_source: Path
+    redo_rates: Dict[str, float] = {}                # <-- option B
+    redo_procedures_source: Optional[Path] = None    # kept for completeness
     simulation: Dict[str, int | float]
+    outputs: Dict[str, str]
 
-    # ---------- validators --------------------------------------------------
+    # -----------------------------------------------------
     @validator('procedure_counts')
     def check_csv_exists(cls, v):
-        for k, path in v.items():
+        for tag, path in v.items():
             if not Path(path).exists():
-                raise FileNotFoundError(f'Missing csv for {k}: {path}')
+                raise FileNotFoundError(f"Missing csv for '{tag}': {path}")
         return v
 
 
 # ---------------------------------------------------------------------------
-# 2. Helper classes ----------------------------------------------------------
+# 2.  Helper classes / functions --------------------------------------------
 # ---------------------------------------------------------------------------
-
-class DistributionFactory:
-    """Create frozen scipy distributions; currently uses Normal."""
-    def __init__(self, mode_cfg: Dict[str, DurabilityMode]):
-        self.modes: list[Tuple[norm, float]] = []
-        for m in mode_cfg.values():
-            self.modes.append((norm(loc=m.mean, scale=m.sd), m.weight))
-        # normalise weights
-        tot = sum(w for _, w in self.modes)
-        self.modes = [(d, w / tot) for d, w in self.modes]
-
-    def sample(self, size: int) -> np.ndarray:
-        # choose mode per sample, then draw
-        mode_choices = np.random.choice(len(self.modes), p=[w for _, w in self.modes], size=size)
-        samples = np.empty(size)
-        for i, (dist, _) in enumerate(self.modes):
-            idx = mode_choices == i
-            if idx.any():
-                samples[idx] = dist.rvs(idx.sum())
-        return samples.clip(min=0.1)  # avoid negatives
-
 
 def parse_age_band(band: str) -> Tuple[int, int]:
     if band.startswith(">="):
         lo = int(band[2:])
-        hi = lo + 5  # open upper band width for sampling
+        hi = lo + 5
     else:
         lo, hi = map(int, band.split('-'))
-    return lo, hi + 1  # make hi exclusive
+    return lo, hi + 1           # make hi exclusive for np.random
 
 
-def linear_interp(year: int, anchor_dict: Dict[str, float]) -> float:
-    """Piece-wise linear penetration interpolation."""
-    # anchor_dict keys are 'YYYY' or 'YYYY-YYYY'
-    anchors = []
-    for k, v in anchor_dict.items():
+def linear_interp(year: int, anchors: Dict[str, float]) -> float:
+    points = []
+    for k, v in anchors.items():
         if '-' in k:
-            start, end = map(int, k.split('-'))
-            anchors.append((start, v))
-            anchors.append((end, v))
+            a, b = map(int, k.split('-'))
+            points.append((a, v))
+            points.append((b, v))
         else:
-            anchors.append((int(k), v))
-    anchors.sort()
-    years, vals = zip(*anchors)
+            points.append((int(k), v))
+    points.sort()
+    xs, ys = zip(*points)
+    return float(np.interp(year, xs, ys))
 
-    return np.interp(year, years, vals)
+
+class DistributionFactory:
+    """Wraps one or more normal modes into a sampler."""
+    def __init__(self, modes: Dict[str, DurabilityMode]):
+        self._dists, self._weights = [], []
+        for mode in modes.values():
+            self._dists.append(norm(loc=mode.mean, scale=mode.sd))
+            self._weights.append(mode.weight)
+        self._weights = np.array(self._weights) / np.sum(self._weights)
+
+    def sample(self, n: int, rng: np.random.Generator) -> np.ndarray:
+        which = rng.choice(len(self._dists), p=self._weights, size=n)
+        out = np.empty(n)
+        for i, dist in enumerate(self._dists):
+            mask = which == i
+            if mask.any():
+                out[mask] = dist.rvs(mask.sum(), random_state=rng)
+        return out.clip(min=0.1)
 
 
 # ---------------------------------------------------------------------------
-# 3. Core patient-level simulation ------------------------------------------
+# 3.  Core simulator ---------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 class ViVSimulator:
@@ -106,144 +129,156 @@ class ViVSimulator:
         self.cfg = cfg
         self.start_forecast = cfg.years['simulate_from']
         self.end_year = cfg.years['end']
-        self.rng = np.random.default_rng(cfg.simulation.get('rng_seed', None))
+        self.rng = np.random.default_rng(cfg.simulation.get('rng_seed'))
 
-        # pre-load csvs
+        # ----------------------- data -----------------------
         self.tavi_df = pd.read_csv(cfg.procedure_counts['tavi'])
-        self.savr_df = pd.read_csv(cfg.procedure_counts['redo_savr'])
-        self.redo_df = pd.read_csv(cfg.redo_procedures_source)
+        self.savr_df = pd.read_csv(cfg.procedure_counts['savr'])
 
-        # build distributions
+        # ------------------- distributions ------------------
+        self.dur_tavi = DistributionFactory(cfg.durability['tavi'])
         self.dur_savr_lt70 = DistributionFactory(cfg.durability['savr_bioprosthetic']['lt70'])
         self.dur_savr_gte70 = DistributionFactory(cfg.durability['savr_bioprosthetic']['gte70'])
-        self.dur_tavi = DistributionFactory(cfg.durability['tavi'])
 
-        # survival (Normal proxy; can swap to lifetable later)
-        surv_low = cfg.survival_curves['low_risk']
-        self.surv_low = norm(loc=surv_low['median'], scale=surv_low['sd'])
-        surv_ih = cfg.survival_curves['int_high_risk']
-        self.surv_ih = norm(loc=surv_ih['median'], scale=surv_ih['sd'])
+        low = cfg.survival_curves['low_risk']
+        ih  = cfg.survival_curves['int_high_risk']
+        self.surv_low = norm(loc=low['median'], scale=low['sd'])
+        self.surv_ih  = norm(loc=ih['median'],  scale=ih['sd'])
 
-    # ---------------------------------------------------------
-    def run_once(self) -> pd.DataFrame:
-        candidates = []  # each row: year, viv_type
-
-        # ---------- loop over input counts --------------------
-        for proc_type, df in [('tavi', self.tavi_df), ('savr', self.savr_df)]:
-            for _, row in df.iterrows():
-                year = int(row['year'])
-                n = int(row['count'])
-                lo, hi = parse_age_band(row['age_band'])
-                ages = self.rng.integers(lo, hi, size=n)
-                sex = row['sex']   # not used yet, but stored for extensibility
-
-                # --- sample risk group --------------------------
-                risk_mix = self._risk_mix(proc_type, year)
-                risk_is_low = self.rng.uniform(0, 1, size=n) < risk_mix['low']
-                surv_years = np.where(
-                    risk_is_low,
-                    self.surv_low.rvs(n, random_state=self.rng),
-                    self.surv_ih.rvs(n, random_state=self.rng)
-                ).clip(min=0.1)
-
-                # --- sample durability -------------------------
-                if proc_type == 'tavi':
-                    durability = self.dur_tavi.sample(n)
-                else:  # SAVR: choose age-dependent distribution
-                    durability = np.where(
-                        ages < 70,
-                        self.dur_savr_lt70.sample(n),
-                        self.dur_savr_gte70.sample(n)
-                    )
-
-                event_years = year + durability.astype(int)
-                death_years = year + surv_years.astype(int)
-
-                alive_at_failure = event_years <= death_years
-                event_years = event_years[alive_at_failure]
-
-                # keep only yrs inside forecast horizon
-                mask = (event_years >= self.start_forecast) & (event_years <= self.end_year)
-                event_years = event_years[mask]
-                if len(event_years) == 0:
-                    continue
-
-                viv_type = 'tavi_in_tavi' if proc_type == 'tavi' else 'tavi_in_savr'
-                candidates.extend([(y, viv_type) for y in event_years])
-
-        cand_df = pd.DataFrame(candidates, columns=['year', 'viv_type'])
-        out = cand_df.value_counts().rename('n_raw').reset_index()
-
-        # ---- apply penetration -------------------------------
-        out['penetration'] = out.apply(
-            lambda r: linear_interp(int(r['year']), self.cfg.penetration[r['viv_type']]), axis=1
-        )
-        out['n_after_pen'] = (out['n_raw'] * out['penetration']).round().astype(int)
-
-        # ---- subtract redo-surgery counts --------------------
-        redo_map = {
-            'tavi_in_savr': 'savr_after_savr',
-            'tavi_in_tavi': 'savr_after_tavi'
-        }
-        redo_subset = self.redo_df[self.redo_df['redo_type'].isin(redo_map.values())]
-        out = out.merge(
-            redo_subset.rename(columns={'redo_type': 'viv_type'}),
-            how='left',
-            left_on=['year', 'viv_type'],
-            right_on=['year', 'viv_type']
-        )
-
-
-
-
-        
-        out['count'] = out['n_after_pen'] - out['count'].fillna(0).astype(int)
-        out.loc[out['count'] < 0, 'count'] = 0
-        return out[['year', 'viv_type', 'count']]
-
-    # ---------------------------------------------------------
+    # -------------------------------------------------------
     def _risk_mix(self, proc_type: str, year: int) -> Dict[str, float]:
         if proc_type == 'savr':
             return self.cfg.risk_mix['savr']
-        # TAVI – need to find which block contains year
         for period, mix in self.cfg.risk_mix['tavi'].items():
-            start, end = map(int, period.split('-'))
-            if start <= year <= end:
+            a, b = map(int, period.split('-'))
+            if a <= year <= b:
                 return mix
-        raise ValueError(f'No risk mix for TAVI year {year}')
+        raise ValueError(f"No TAVI risk mix defined for year {year}")
 
+    # -------------------------------------------------------
+    def run_once(self, run_id: int = 0) -> pd.DataFrame:
+        cand: list[Tuple[int, str]] = []
+        total_index = 0
+
+        # ---------- loop over TAVI and SAVR counts ----------
+        for proc_type, df in (('tavi', self.tavi_df), ('savr', self.savr_df)):
+            for _, row in df.iterrows():
+                year = int(row.year)
+                n    = int(row.count)
+                total_index += n
+                lo, hi = parse_age_band(row.age_band)
+                ages   = self.rng.integers(lo, hi, size=n)
+
+                # survival draw
+                mix = self._risk_mix(proc_type, year)
+                low_risk_mask = self.rng.random(n) < mix['low']
+                surv = np.where(
+                    low_risk_mask,
+                    self.surv_low.rvs(n, random_state=self.rng),
+                    self.surv_ih.rvs(n,  random_state=self.rng)
+                )
+
+                # durability draw
+                if proc_type == 'tavi':
+                    dur = self.dur_tavi.sample(n, self.rng)
+                else:
+                    dur = np.where(
+                        ages < 70,
+                        self.dur_savr_lt70.sample(n, self.rng),
+                        self.dur_savr_gte70.sample(n, self.rng)
+                    )
+
+                fail_year  = year + dur.astype(int)
+                death_year = year + surv.astype(int)
+
+                mask = (fail_year <= death_year) & \
+                       (self.start_forecast <= fail_year) & \
+                       (fail_year <= self.end_year)
+                if mask.any():
+                    vtype = 'tavi_in_tavi' if proc_type == 'tavi' else 'tavi_in_savr'
+                    cand.extend((fy, vtype) for fy in fail_year[mask])
+
+        if not cand:
+            log.warning("Run %d produced no ViV candidates!", run_id)
+            return pd.DataFrame(columns=['year', 'viv_type', 'count'])
+
+        cand_df = (pd.DataFrame(cand, columns=['year', 'viv_type'])
+                     .value_counts()
+                     .rename('n_raw')
+                     .reset_index())
+
+        total_candidates = cand_df.n_raw.sum()
+        log.info("Run %d | index pts %s → viable failures %s",
+                 run_id, f"{total_index:,}", f"{total_candidates:,}")
+
+        # ---------- apply penetration -----------------------
+        cand_df['penetration'] = cand_df.apply(
+            lambda r: linear_interp(int(r.year),
+                                    self.cfg.penetration[r.viv_type]),
+            axis=1
+        )
+        cand_df['after_pen'] = (cand_df.n_raw * cand_df.penetration).round().astype(int)
+
+        log.info("Run %d | after penetration %s (%.1f%%)",
+                 run_id, f"{cand_df.after_pen.sum():,}",
+                 100 * cand_df.after_pen.sum() / total_candidates)
+
+        # ---------- subtract redo-SAVR ----------------------
+        rates = self.cfg.redo_rates
+        cand_df['redo_rate'] = cand_df.viv_type.map(
+            lambda vt: rates.get(
+                'savr_after_savr' if vt == 'tavi_in_savr' else 'savr_after_tavi',
+                0.0
+            )
+        )
+        cand_df['count'] = (cand_df.after_pen * (1 - cand_df.redo_rate)).round().astype(int)
+
+        log.info("Run %d | after redo-SAVR %s", run_id, f"{cand_df.count.sum():,}")
+
+        return cand_df[['year', 'viv_type', 'count']]
+
+
+# ---------------------------------------------------------------------------
+# 4.  Simulation driver ------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def run_simulation(cfg: Config) -> pd.DataFrame:
-    mc = ViVSimulator(cfg)
+    sim = ViVSimulator(cfg)
     runs = []
-    for _ in range(cfg.simulation['n_runs']):
-        runs.append(mc.run_once().assign(run=_))
+    for r in range(cfg.simulation['n_runs']):
+        runs.append(sim.run_once(run_id=r).assign(run=r))
+
     all_df = pd.concat(runs, ignore_index=True)
     agg = (all_df.groupby(['year', 'viv_type'])
-                  .agg(mean=('count', 'mean'),
-                       sd=('count', 'std'))
-                  .reset_index())
+                 .agg(mean=('count', 'mean'),
+                      sd=('count',   'std'))
+                 .reset_index())
     return agg
 
 
 # ---------------------------------------------------------------------------
-# 4. CLI entry-point ---------------------------------------------------------
+# 5.  CLI --------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-def main(argv=None):
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', required=True)
-    args = parser.parse_args(argv)
+    parser.add_argument('--log-level', default='INFO',
+                        help='DEBUG | INFO | WARNING | ERROR')
+    args = parser.parse_args()
+
+    setup_logging(args.log_level)
 
     with open(args.config) as fh:
         cfg_dict = yaml.safe_load(fh)
     cfg = Config.parse_obj(cfg_dict)
 
     out_df = run_simulation(cfg)
-    out_path = Path(cfg_dict['outputs']['csv'])
+    out_path = Path(cfg.outputs['csv'])
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
     out_df.to_csv(out_path, index=False)
-    print(f'Saved forecast to {out_path}')
+    log.info("Saved aggregate forecast → %s", out_path)
 
 
 if __name__ == '__main__':
