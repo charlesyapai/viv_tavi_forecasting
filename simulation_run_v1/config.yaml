@@ -18,6 +18,13 @@ durability:
     early:    {mean: 4,  sd: 1.5, weight: 0.20}
     late:     {mean: 11.5, sd: 3.5, weight: 0.80}
 
+
+# --- REDO-SURGERY RATES (literature defaults) ---------------
+redo_rates:
+  savr_after_savr: 0.04   # 4 % of failed SAVR go back to open surgery
+  savr_after_tavi: 0.01   # 1 % of failed TAVI are treated with redo-SAVR
+
+
 # --- SURVIVAL / LIFE-EXPECTANCY -----------------------------
 survival_curves:
   low_risk:            {median: 11, sd: 3}
