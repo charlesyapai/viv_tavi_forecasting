@@ -91,6 +91,9 @@ python model.py --config config.yaml --log-level INFO
 
 # 3b. optional: generate Figure-1 style plot
 python postprocess.py out/viv_forecast.csv --outdir out/figs
+
+
+python postprocess.py out/viv_sex_split_risk_forecast.csv --outdir out/sex_split_forecast
 ```
 
 
@@ -99,3 +102,5 @@ python postprocess.py out/viv_forecast.csv --outdir out/figs
 | --------------------------- | ----------------------------------------------------------------- |
 | `out/viv_forecast.csv`      | Mean ± SD ViV counts for each year and ViV type                   |
 | `out/figs/viv_forecast.png` | Publication-ready line plot (matches Figure 1 in reference paper) |
+
+

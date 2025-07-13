@@ -26,25 +26,37 @@ redo_rates:
 
 
 # --- SURVIVAL / LIFE-EXPECTANCY -----------------------------
+# survival_curves:
+#   low_risk:            {median: 11, sd: 3}
+#   int_high_risk:       {median: 6,  sd: 2}
+
+
+
+# New sections
 survival_curves:
-  low_risk:            {median: 11, sd: 3}
-  int_high_risk:       {median: 6,  sd: 2}
-
-
-survival_curve:
-  men:              {median: 10, sd: 0.4}
-  women:            {median: 10.3, sd: 0.9}
-  low_risk_men:     {median: 10.5, sd: 1.6}
-  low_risk_women:   {median: 11.3, sd: 0.2}
-
+  male:
+    low:          {median: 10.5, sd: 3}
+    intermediate: {median:  6.6, sd: 2}
+    high:         {median:  5.7, sd: 2}
+  female:
+    low:          {median: 11.3, sd: 3}
+    intermediate: {median:  7.9, sd: 2}
+    high:         {median:  5.8, sd: 2}
 
 risk_mix:
-  savr: {low: 0.85, ih: 0.15}
+  savr:           {low: 0.70, intermediate: 0.20, high: 0.10}
   tavi:
-    2007-2013: {low: 0.0,  ih: 1.0}
-    2014-2019: {low: 0.0,  ih: 1.0}
-    2019-2024: {low: 0.33, ih: 0.67}
-    2024-2035: {low: 0.50, ih: 0.50}
+    2007-2013:    {low: 0.00, intermediate: 0.70, high: 0.30}
+    2014-2019:    {low: 0.00, intermediate: 0.70, high: 0.30}
+    2019-2024:    {low: 0.33, intermediate: 0.45, high: 0.22}
+    2024-2035:    {low: 0.50, intermediate: 0.35, high: 0.15}
+
+age_hazard:
+  ref_age: 75          # reference age (years) where HR = 1
+  hr_per5:             # hazard-ratio per +5-year age increase
+    low:          1.30
+    intermediate: 1.04
+    high:         1.01
 
 
 # --- VIV PENETRATION ASSUMPTIONS ----------------------------
