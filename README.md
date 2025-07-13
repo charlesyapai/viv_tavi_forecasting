@@ -24,7 +24,7 @@ To run,
 pip install numpy pandas scipy pyyaml matplotlib pydantic
 
 # 2. Execute the model
-python model.py --config config.yaml
+python verbose_model.py --config config.yaml --log-level DEBUG
 
 # 3. Make the plot
 python postprocess.py out/viv_forecast.csv --outdir out/figs
@@ -60,6 +60,42 @@ This is reflected in our configuration where we state that:
 redo_rates:
   savr_after_savr: 0.04    # 4 % of SAVR failures each year
   savr_after_tavi: 0.01    # 1 % of TAVI failures
+```
 
 
 
+
+# Getting started
+
+## 🔧 1 · Create a clean Python environment
+### Option A · venv (built-in, works everywhere)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows:  .venv\Scripts\activate
+```
+### Option B · conda / mamba
+conda create -n viv-tavi python=3.10 -y
+conda activate viv-tavi
+
+
+
+## 📦 2 · Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+## ▶️ 3 · Run the Monte-Carlo forecast
+```bash
+# 3a. main simulation (CSV output)
+python model.py --config config.yaml --log-level INFO
+
+# 3b. optional: generate Figure-1 style plot
+python postprocess.py out/viv_forecast.csv --outdir out/figs
+```
+
+
+## Key outputs:
+| File                        | Purpose                                                           |
+| --------------------------- | ----------------------------------------------------------------- |
+| `out/viv_forecast.csv`      | Mean ± SD ViV counts for each year and ViV type                   |
+| `out/figs/viv_forecast.png` | Publication-ready line plot (matches Figure 1 in reference paper) |
