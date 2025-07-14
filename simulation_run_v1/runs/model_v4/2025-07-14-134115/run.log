@@ -1,0 +1,5 @@
+13:41:15 | INFO     | Outputs will be stored under runs/model_v4/2025-07-14-134115
+13:41:16 | INFO     | TAVI rows 209, SAVR rows 398 (observed+synthetic)
+13:41:18 | INFO     | Done - 2 rows (per-type) → viv_forecast.csv ; plot + total CSV also saved.
+13:41:18 | INFO     | TAVI rows 209, SAVR rows 398 (observed+synthetic)
+13:41:20 | INFO     | Done - 11 yrs x 2 ViV types written; plots ready.
