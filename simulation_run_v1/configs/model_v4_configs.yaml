@@ -1,0 +1,137 @@
+# python models/model_v4.py --config configs/model_v4_configs.yaml --log-level DEBUG     
+
+experiment_name: model_v4_forecasting_from_2024          # <<< folder under runs/
+scenario_tag:    null          # optional – appended to folder/filenames
+
+# -----------------------------------------------------------------
+# Core horizon
+# -----------------------------------------------------------------
+years:
+  start: 2000            # earliest index year present in CSVs
+  simulate_from: 2024    # first calendar year we care about ViV counts
+  end: 2050
+
+# -----------------------------------------------------------------
+# Registry CSV locations (age_band, sex, year, count)
+# -----------------------------------------------------------------
+procedure_counts:
+  savr: data/registry_savr.csv
+  tavi: data/registry_tavi.csv
+
+# -----------------------------------------------------------------
+# Extrapolation of future index volumes
+# -----------------------------------------------------------------
+# extrapolation:
+#   enabled: true          # set false to disable synthetic future rows
+#   last_n: 5              # fit trend on last *n* observed years
+#   method: linear         # linear | constant
+
+volume_extrapolation:
+  window: 5               # use the last 5 yrs; set 1 for 'flat'
+  method: linear          # future proof – only 'linear' for now
+
+# -----------------------------------------------------------------
+# Handling of open age bin ("≥80" or "80+")
+# -----------------------------------------------------------------
+open_age_bin:
+  lower_bound: 81
+  upper_bound: 100
+
+# -----------------------------------------------------------------
+# Risk‑mix control
+#   • categories = 2 → low + int_high (matches US paper)
+#   • categories = 3 → low + intermediate + high
+# -----------------------------------------------------------------
+
+# --- risk model switches ----------------------------------------------
+risk_model:
+  categories: 3            # 2 → low + IH   | 3 → low / intermediate / high
+  use_age_hazard: true
+
+
+# -----------------------------------------------------------------
+# Durability assumptions (same as US paper)
+# -----------------------------------------------------------------
+durability:
+  savr_bioprosthetic:
+    lt70:  {mean: 10,  sd: 5,  weight: 1.0}
+    gte70: {mean: 17,  sd: 5,  weight: 1.0}
+  tavi:
+    early: {mean: 4,  sd: 1.5, weight: 0.20}
+    late:  {mean: 11.5, sd: 3.5, weight: 0.80}
+
+# -----------------------------------------------------------------
+# Survival curves (median & sd of Normal)
+# -----------------------------------------------------------------
+survival_curves:
+  low:          {median: 11, sd: 3}
+  intermediate: {median:  7, sd: 2}
+  high:         {median:  6, sd: 2}
+  int_high:     {median:  6, sd: 2}   # used only if categories=2
+
+  low_risk:            {median: 11, sd: 3}
+  int_high_risk:       {median: 6,  sd: 2}
+
+# -----------------------------------------------------------------
+# Age‑hazard modifiers (OPTIONAL) – hazard ratio per +5 years over ref_age
+#   Survival_time_adj = Survival_time / (HR^((age - ref_age)/5))
+# -----------------------------------------------------------------
+age_hazard:
+  ref_age: 75
+  hr_per5:
+    low:          1.30
+    intermediate: 1.04
+    high:         1.01
+
+# -----------------------------------------------------------------
+# Risk‑mix by calendar year
+# -----------------------------------------------------------------
+risk_mix:
+  savr: {low: 0.70, intermediate: 0.20, high: 0.10}
+  tavi:
+    2007-2013: {low: 0.00, intermediate: 0.70, high: 0.30}
+    2014-2019: {low: 0.00, intermediate: 0.70, high: 0.30}
+    2019-2024: {low: 0.33, intermediate: 0.45, high: 0.22}
+    2024-2035: {low: 0.50, intermediate: 0.35, high: 0.15}
+    2036-2100: {low: 0.50, intermediate: 0.35, high: 0.15}   
+
+# -----------------------------------------------------------------
+# ViV penetration anchors (piece‑wise linear interpolation)
+# -----------------------------------------------------------------
+penetration:
+  tavi_in_tavi:
+    2007-2022: 0.10
+    '2035':      0.60
+  tavi_in_savr:
+    2007-2022: 0.60
+    '2035':      0.80
+
+# -----------------------------------------------------------------
+# Redo‑SAVR haircut percentages
+# -----------------------------------------------------------------
+redo_rates:
+  savr_after_savr: 0.04
+  savr_after_tavi: 0.01
+
+# -----------------------------------------------------------------
+# Monte‑Carlo params
+# -----------------------------------------------------------------
+simulation:
+  n_runs: 20
+  rng_seed: 20250714
+
+
+# --- how far back to fit the straight-line trend -----------------------
+
+
+# --- open-ended age band ----------------------------------------------
+open_age_bin_width: 20     # "≥80" → 80-100
+
+age_bins: [60, 65, 70, 75, 80, 85, 100]   # edges – last number is upper cap
+
+
+
+# --- output file paths -----
+outputs:
+  csv:  out/viv_forecast.csv
+  figs: out/figs/

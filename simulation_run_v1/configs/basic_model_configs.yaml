@@ -1,0 +1,80 @@
+# --- CORE SIMULATION PERIOD ---------------------------------
+years:
+  start: 2000          # earliest index procedure we have data for
+  simulate_from: 2024  # first year we forecast ViV need
+  end: 2035
+
+# --- PROCEDURE COUNTS (external CSV paths) ------------------
+procedure_counts:
+  savr:       data/registry_savr.csv
+  tavi:       data/registry_tavi.csv
+
+# --- VALVE DURABILITY ASSUMPTIONS ---------------------------
+durability:
+  savr_bioprosthetic:
+    lt70:     {mean: 10, sd: 5, weight: 1.0}   # weight=1 b/c single mode inside age stratum
+    gte70:    {mean: 17, sd: 5, weight: 1.0}
+  tavi:
+    early:    {mean: 4,  sd: 1.5, weight: 0.20}
+    late:     {mean: 11.5, sd: 3.5, weight: 0.80}
+
+
+# --- REDO-SURGERY RATES (literature defaults) ---------------
+redo_rates:
+  savr_after_savr: 0.04   # 4 % of failed SAVR go back to open surgery
+  savr_after_tavi: 0.01   # 1 % of failed TAVI are treated with redo-SAVR
+
+
+# --- SURVIVAL / LIFE-EXPECTANCY -----------------------------
+survival_curves:
+  low_risk:            {median: 11, sd: 3}
+  int_high_risk:       {median: 6,  sd: 2}
+
+  # # Sections for sex risk split and age hazard ratios
+  # male:
+  #   low:          {median: 10.5, sd: 3}
+  #   intermediate: {median:  6.6, sd: 2}
+  #   high:         {median:  5.7, sd: 2}
+  # female:
+  #   low:          {median: 11.3, sd: 3}
+  #   intermediate: {median:  7.9, sd: 2}
+  #   high:         {median:  5.8, sd: 2}
+
+risk_mix:
+  savr:           {low: 0.70, intermediate: 0.20, high: 0.10}
+  tavi:
+    2007-2013:    {low: 0.00, intermediate: 0.70, high: 0.30}
+    2014-2019:    {low: 0.00, intermediate: 0.70, high: 0.30}
+    2019-2024:    {low: 0.33, intermediate: 0.45, high: 0.22}
+    2024-2035:    {low: 0.50, intermediate: 0.35, high: 0.15}
+
+age_hazard:
+  ref_age: 75          # reference age (years) where HR = 1
+  hr_per5:             # hazard-ratio per +5-year age increase
+    low:          1.30
+    intermediate: 1.04
+    high:         1.01
+
+
+# --- VIV PENETRATION ASSUMPTIONS ----------------------------
+penetration:
+  tavi_in_tavi:
+    2007-2022: 0.10
+    '2035':      0.60          # linear interpolation in-between
+  tavi_in_savr:
+    2007-2022: 0.60
+    '2035':      0.80
+
+# --- REDO-SURGERY ADJUSTMENTS -------------------------------
+redo_procedures_source: data/redo_trends.csv
+
+# --- MONTE CARLO SETTINGS ----------------------------------
+simulation:
+  n_runs:   2
+  rng_seed: 20250713
+
+outputs:
+  csv: out/viv_forecast.csv
+  figs: out/figs/
+
+
