@@ -84,14 +84,6 @@ conda activate viv-tavi
 pip install -r requirements.txt
 ```
 
-## ▶️ 3 · Run the Monte-Carlo forecast
-```bash
-# 3a. main simulation (CSV output)
-python model.py --config config.yaml --log-level INFO
-
-# 3b. optional: generate Figure-1 style plot
-python postprocess.py out/viv_forecast.csv --outdir out/figs
-```
 
 
 ## Key outputs:
@@ -99,3 +91,15 @@ python postprocess.py out/viv_forecast.csv --outdir out/figs
 | --------------------------- | ----------------------------------------------------------------- |
 | `out/viv_forecast.csv`      | Mean ± SD ViV counts for each year and ViV type                   |
 | `out/figs/viv_forecast.png` | Publication-ready line plot (matches Figure 1 in reference paper) |
+
+
+
+
+
+# UPDATE:
+WE ARE NO LONGER USING POSTPROCESS.PY -> Latest version of the script is model_v4.py.
+
+Perform the following commands to run the latest version of the model in the terminal:
+1. navigate to simulation_run_v1 folder, via `cd simulation_run_v1`
+2. Go to `configs/model_v4_configs.yaml` and adjust the `experiment_name` variable
+3. In the terminal execute the program with python models/model_v4.py --config configs/model_v4_configs.yaml --log-level DEBUG
