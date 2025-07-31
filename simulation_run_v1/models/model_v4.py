@@ -12,6 +12,9 @@ Major additions vs the previous version
 • experiment_name + scenario_tag → drive output folder organisation
 • save_index_projection() → writes 2025-2035 projected counts + QC plot
 • aggressive log filtering for matplotlib internals
+
+/Users/charles/miniconda3/bin/python /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/models/model_v4.py --config configs/model_v4_configs.yaml --log-level DEBUG
+
 """
 
 
