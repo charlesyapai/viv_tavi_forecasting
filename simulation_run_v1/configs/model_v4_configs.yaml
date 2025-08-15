@@ -1,6 +1,6 @@
 # python models/model_v4.py --config configs/model_v4_configs.yaml --log-level DEBUG     
 
-experiment_name: model_v4_forecasting_from_2024          # <<< folder under runs/
+experiment_name: model_v4_forecasting_testing_settings          # <<< folder under runs/
 scenario_tag:    null          # optional – appended to folder/filenames
 
 # -----------------------------------------------------------------
@@ -9,7 +9,7 @@ scenario_tag:    null          # optional – appended to folder/filenames
 years:
   start: 2000            # earliest index year present in CSVs
   simulate_from: 2024    # first calendar year we care about ViV counts
-  end: 2050
+  end: 2035
 
 # -----------------------------------------------------------------
 # Registry CSV locations (age_band, sex, year, count)
