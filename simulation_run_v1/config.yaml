@@ -30,15 +30,15 @@ survival_curves:
   low_risk:            {median: 11, sd: 3}
   int_high_risk:       {median: 6,  sd: 2}
 
-  # Sections for sex risk split and age hazard ratios
-  male:
-    low:          {median: 10.5, sd: 3}
-    intermediate: {median:  6.6, sd: 2}
-    high:         {median:  5.7, sd: 2}
-  female:
-    low:          {median: 11.3, sd: 3}
-    intermediate: {median:  7.9, sd: 2}
-    high:         {median:  5.8, sd: 2}
+  # # Sections for sex risk split and age hazard ratios
+  # male:
+  #   low:          {median: 10.5, sd: 3}
+  #   intermediate: {median:  6.6, sd: 2}
+  #   high:         {median:  5.7, sd: 2}
+  # female:
+  #   low:          {median: 11.3, sd: 3}
+  #   intermediate: {median:  7.9, sd: 2}
+  #   high:         {median:  5.8, sd: 2}
 
 risk_mix:
   savr:           {low: 0.70, intermediate: 0.20, high: 0.10}
