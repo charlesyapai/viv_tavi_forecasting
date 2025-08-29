@@ -113,11 +113,11 @@ age_hazard:
 risk_mix:
   savr: {low: 0.70, intermediate: 0.20, high: 0.10}
   tavi:
-    2007-2013: {low: 0.00, intermediate: 0.70, high: 0.30}
-    2014-2019: {low: 0.00, intermediate: 0.70, high: 0.30}
-    2019-2024: {low: 0.33, intermediate: 0.45, high: 0.22}
-    2024-2035: {low: 0.50, intermediate: 0.35, high: 0.15}
-    2036-2100: {low: 0.50, intermediate: 0.35, high: 0.15}   
+    2007-2015: {low: 0.29, intermediate: 0.20, high: 0.51}
+    2015-2019: {low: 0.53, intermediate: 0.24, high: 0.23}
+    2019-2024: {low: 0.55, intermediate: 0.35, high: 0.10}
+    2024-2035: {low: 0.55, intermediate: 0.35, high: 0.10}
+    2035-2100: {low: 0.55, intermediate: 0.35, high: 0.10}
 
 # -----------------------------------------------------------------
 # ViV penetration anchors (piece‑wise linear interpolation)

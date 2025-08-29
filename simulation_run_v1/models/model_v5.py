@@ -97,6 +97,9 @@ class Config(BaseModel):
     simulation: Dict[str, int | float]
 
     outputs: Dict[str, str]
+    
+    population_projection: Dict[str, str] | None = None
+    redo_savr_numbers: Dict[str, object] | None = None
 
     # -------------- validators -----------------------------
     @validator("procedure_counts")
@@ -234,6 +237,21 @@ def extrapolate_volumes(csv_path: Path, end_year: int,
 
 
 # ──────────────────────────────────────────────────────────────
+
+def _load_redo_savr_numbers(cfg: Config) -> Dict[int, int]:
+    out = {}
+    rs = cfg.redo_savr_numbers or {}
+    if isinstance(rs.get("values"), dict):
+        out = {int(k): int(v) for k, v in rs["values"].items()}
+    elif rs.get("path"):
+        p = Path(str(rs["path"]))
+        if p.exists():
+            tmp = pd.read_csv(p)
+            # expects columns exactly: year,count
+            out = {int(r["year"]): int(r["count"]) for _, r in tmp.iterrows()}
+    return out
+
+
 
 def _largest_remainder_split(total: int, shares: np.ndarray) -> np.ndarray:
     """Integer allocation that preserves sum(total)."""
@@ -695,6 +713,7 @@ def run_simulation(cfg: Config, out_dir: Path):
                         .agg(mean=("count","mean"), sd=("count","std"))
                         .reset_index())
     summary.to_csv(out_dir / "viv_forecast.csv", index=False)
+    
 
     # —— new flow summary ————————————————————————
     flow_mean = (flow_all.groupby(["year","proc"])
@@ -710,7 +729,38 @@ def run_simulation(cfg: Config, out_dir: Path):
                                    .reset_index(),
                        summary, out_dir, cfg.age_bins)
 
+
+
+    redo_dict = _load_redo_savr_numbers(cfg)
+    log.info("redo-SAVR numbers loaded: %s", redo_dict)
+
+    if redo_dict:
+        realized = summary.copy()
+        realized["realized"] = realized["mean"]
+        mask = realized["viv_type"].eq("tavi_in_savr")
+        # subtract absolute numbers per year (floored at 0)
+        realized.loc[mask, "realized"] = realized[mask].apply(
+            lambda r: max(r["mean"] - redo_dict.get(int(r["year"]), 0), 0.0), axis=1
+        )
+        realized.to_csv(out_dir / "viv_forecast_realized.csv", index=False)
+
+        # Optional quick plot
+        wide = (realized.pivot(index="year", columns="viv_type", values="realized")
+                        .fillna(0))
+        wide["total"] = wide.sum(axis=1)
+        plt.figure()
+        for col in wide.columns:
+            plt.plot(wide.index, wide[col], label=f"{col.replace('_',' ')} (realized)")
+        plt.title("Realized ViV-TAVI volumes (redo-SAVR numbers applied)")
+        plt.xlabel("Calendar year"); plt.ylabel("Procedures / yr")
+        plt.tight_layout(); plt.legend()
+        plt.savefig(out_dir / "viv_forecast_realized.png"); plt.close()
+    else:
+        log.info("No redo-SAVR numbers provided; 'viv_forecast_realized.*' not written.")
+
+
     return summary, flow_mean
+
 
 # ════════════════════════════════════════════════════════════════════════
 # 7 ── CLI
@@ -730,12 +780,12 @@ def main():
     setup_logging(args.log_level, out_dir)
     log.info("Outputs will be stored under %s", out_dir)
 
-    agg = run_simulation(cfg, out_dir)
-    # if agg.empty:
-    #     log.warning("Simulation returned empty result set.")
-    # else:
-    log.info("Done - %d rows (per-type) → viv_forecast.csv ; "
-            "plot + total CSV also saved.", len(agg))
+    # agg = run_simulation(cfg, out_dir)
+    # # if agg.empty:
+    # #     log.warning("Simulation returned empty result set.")
+    # # else:
+    # log.info("Done - %d rows (per-type) → viv_forecast.csv ; "
+    #         "plot + total CSV also saved.", len(agg))
     
     summary, flow = run_simulation(cfg, out_dir)
 
