@@ -28,6 +28,10 @@ Major upgrades vs v5
 4) Config
    • New `index_projection.{tavi|savr}` block
    • Backward-compatible with v5's `volume_extrapolation`
+   
+   
+   
+   on mac, run with /Users/charles/miniconda3/bin/python /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/models/model_v6.py --config configs/model_v6_configs.yaml --log-level DEBUG
 """
 
 from __future__ import annotations
@@ -781,50 +785,111 @@ def _plot_flow(stats: pd.DataFrame, proc: str, out_dir: Path) -> None:
     plt.legend(); plt.tight_layout()
     plt.savefig(out_dir / f"flow_{proc}.png"); plt.close()
 
-def _plot_index_series(df: pd.DataFrame, title: str, out_path: Path) -> None:
-    tot = df.groupby(["year","src"])["count"].sum().unstack(fill_value=0).sort_index()
+def _plot_index_series(
+    df: pd.DataFrame,
+    title: str,
+    out_path: Path,
+    observed_cutoff_year: Optional[int] = 2023
+) -> None:
+    """
+    Plot observed (clipped to <= observed_cutoff_year) + a single orange projection line.
+    Prefers 'pop_rate' projection if present, otherwise 'extrap'.
+    """
+    tot = (df.groupby(["year", "src"])["count"]
+             .sum()
+             .unstack(fill_value=0)
+             .sort_index())
+
     plt.figure()
-    if "observed" in tot:
-        plt.plot(tot.index, tot["observed"], marker="o", label="Observed")
-        last_obs = int(tot[tot["observed"]>0].index.max())
-        plt.axvline(last_obs, color="k", linestyle=":", linewidth=1)
-    proj_cols = [c for c in tot.columns if c != "observed"]
-    for c in proj_cols:
-        plt.plot(tot.index, tot[c].where(tot[c]>0), "--", label=c)
-    # shading for projection
-    if "observed" in tot:
-        plt.axvspan(last_obs+0.05, tot.index.max()+0.5, alpha=0.08, color="gray")
-    plt.title(title); plt.xlabel("Year"); plt.ylabel("Procedures / yr")
-    plt.legend(); plt.tight_layout()
-    plt.savefig(out_path); plt.close()
+
+    # 1) Observed line up to cutoff (if present)
+    last_obs_plotted_year = None
+    if "observed" in tot.columns:
+        obs = tot["observed"]
+        if observed_cutoff_year is not None:
+            obs = obs.loc[obs.index <= observed_cutoff_year]
+        if len(obs):
+            last_obs_plotted_year = int(obs.index.max())
+            label = f"Observed (≤{observed_cutoff_year})" if observed_cutoff_year else "Observed"
+            plt.plot(obs.index, obs.values, marker="o", label=label)
+
+    # 2) Choose ONE projection column (orange dashed)
+    proj_col = None
+    if "pop_rate" in tot.columns:
+        proj_col = "pop_rate"
+    elif "extrap" in tot.columns:
+        proj_col = "extrap"
+    else:
+        # If any other projection-like column exists, pick the first non-observed
+        other = [c for c in tot.columns if c != "observed"]
+        proj_col = other[0] if other else None
+
+    if proj_col is not None:
+        proj = tot[proj_col]
+        plt.plot(proj.index, proj.values, "--", label="Projection", color="tab:orange")
+
+    # 3) Visual separators for projection window
+    x_min, x_max = (tot.index.min(), tot.index.max())
+    if observed_cutoff_year is not None:
+        cut = observed_cutoff_year
+        plt.axvline(cut, color="k", linestyle=":", linewidth=1)
+        plt.axvspan(cut + 0.05, x_max + 0.5, alpha=0.08, color="gray")
+
+    plt.title(title)
+    plt.xlabel("Year")
+    plt.ylabel("Procedures / yr")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_path)
+    plt.close()
 
 def _plot_viv_pretty(realized_summary: pd.DataFrame,
                      year_lo: int, year_hi: int,
                      out_path: Path) -> None:
-    # realized_summary: columns year, viv_type, mean
-    sub = realized_summary[(realized_summary.year>=year_lo) & (realized_summary.year<=year_hi)]
-    wide = sub.pivot(index="year", columns="viv_type", values="mean").fillna(0)
+    """
+    Gray bars = total realized ViV; lines = TAVR-in-SAVR and TAVR-in-TAVR.
+    Value labels above each point are bigger, bold, and color-matched.
+    """
+    sub = realized_summary[(realized_summary.year >= year_lo) & (realized_summary.year <= year_hi)]
+    wide = sub.pivot(index="year", columns="viv_type", values="mean").fillna(0.0)
+
+    # Ensure both columns exist
     for c in ("tavi_in_savr", "tavi_in_tavi"):
         if c not in wide.columns:
             wide[c] = 0.0
+
     wide["total"] = wide["tavi_in_savr"] + wide["tavi_in_tavi"]
 
-    plt.figure(figsize=(10,5), dpi=140)
-    # bars for total
-    plt.bar(wide.index, wide["total"], label="Total ViV (realized)", alpha=0.25, color="gray")
-    # lines
-    plt.plot(wide.index, wide["tavi_in_savr"], marker="o", label="TAVR-in-SAVR")
-    plt.plot(wide.index, wide["tavi_in_tavi"], marker="s", label="TAVR-in-TAVR")
+    fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
 
-    # labels above points
+    # Bars for total (keep gray & translucent)
+    ax.bar(wide.index, wide["total"], label="Total ViV (realized)", alpha=0.25, color="gray")
+
+    # Lines
+    line_savr, = ax.plot(wide.index, wide["tavi_in_savr"], marker="o", label="TAVR-in-SAVR")
+    line_tavi, = ax.plot(wide.index, wide["tavi_in_tavi"], marker="s", label="TAVR-in-TAVR")
+
+    # Color-matched, bold labels with a small vertical offset
+    max_val = float(wide[["tavi_in_savr", "tavi_in_tavi"]].to_numpy().max()) if len(wide) else 0.0
+    y_offset = 0.015 * max_val  # 1.5% of max for readability
+
     for x, y in zip(wide.index, wide["tavi_in_savr"]):
-        plt.text(x, y, f"{int(round(y))}", ha="center", va="bottom", fontsize=8)
+        ax.text(x, y + y_offset, f"{int(round(y))}",
+                ha="center", va="bottom", fontsize=11, fontweight="bold",
+                color=line_savr.get_color())
     for x, y in zip(wide.index, wide["tavi_in_tavi"]):
-        plt.text(x, y, f"{int(round(y))}", ha="center", va="bottom", fontsize=8)
-    plt.title(f"Predicted ViV volume ({year_lo}-{year_hi})")
-    plt.xlabel("Year"); plt.ylabel("Procedures / yr")
-    plt.tight_layout(); plt.legend()
-    plt.savefig(out_path); plt.close()
+        ax.text(x, y + y_offset, f"{int(round(y))}",
+                ha="center", va="bottom", fontsize=11, fontweight="bold",
+                color=line_tavi.get_color())
+
+    ax.set_title(f"Predicted ViV volume ({year_lo}–{year_hi})")
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Procedures / yr")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
 
 # ──────────────────────────────────────────────────────────────────────
 # 8) Top-level run

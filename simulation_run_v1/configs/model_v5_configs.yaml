@@ -9,7 +9,7 @@ scenario_tag:    null          # optional – appended to folder/filenames
 years:
   start: 2000            # earliest index year present in CSVs
   simulate_from: 2015    # first calendar year we care about ViV counts
-  end: 2040
+  end: 2035
 
 # -----------------------------------------------------------------
 # Registry CSV locations (age_band, sex, year, count)

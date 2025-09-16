@@ -4,7 +4,7 @@ scenario_tag:    null
 years:
   start: 2000
   simulate_from: 2015
-  end: 2040
+  end: 2035
 
 procedure_counts:
   savr: data/registry_savr.csv
@@ -112,3 +112,4 @@ outputs:
 figure_ranges:
   viv_years: [2023, 2035]   # Image C
   index_projection_years: [2025, 2035]  # QC CSV/PNG for index projection
+  observed_cutoff_year: 2023
