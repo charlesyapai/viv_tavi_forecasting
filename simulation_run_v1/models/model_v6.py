@@ -54,6 +54,54 @@ import warnings
 import pydantic
 from collections import defaultdict
 
+
+# ──────────────────────────────────────────────────────────────────────
+# Plotting options (theme + colors)
+# ──────────────────────────────────────────────────────────────────────
+
+class PlottingConfig(BaseModel):
+    background: str = "light"                # "light" | "darkgrey" | "black"
+    viv_total_bar_color: Optional[str] = None  # e.g. "green" or "#39d353"
+    label_bars: bool = True                  # put numbers above total bars in Image C
+
+def _apply_plot_theme(plot: Optional['PlottingConfig']) -> None:
+    """
+    Set global Matplotlib rcParams so saved PNGs keep the desired background.
+    """
+    # reset to default first so repeated runs don't accumulate rcParams
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    if not plot or str(plot.background).lower() == "light":
+        return  # default Matplotlib look
+
+    bg = str(plot.background).lower()
+    if bg in ("black", "#000", "#000000"):
+        fig_face = "#000000"
+    else:  # "darkgrey" or any other dark-ish request
+        fig_face = "#222222"
+
+    # Switch to dark-friendly defaults
+    plt.style.use("dark_background")
+    rc = plt.rcParams
+    rc["figure.facecolor"] = fig_face
+    rc["axes.facecolor"]   = fig_face
+    rc["savefig.facecolor"] = fig_face   # ensure PNG has the dark background baked in
+    rc["axes.edgecolor"]   = "white"
+    rc["axes.labelcolor"]  = "white"
+    rc["xtick.color"]      = "white"
+    rc["ytick.color"]      = "white"
+    rc["text.color"]       = "white"
+    rc["legend.facecolor"] = fig_face
+    rc["grid.color"]       = "#888888"
+    rc["grid.alpha"]       = 0.25
+
+def _savefig_current(path: Path) -> None:
+    """Save the current figure preserving the figure facecolor."""
+    fig = plt.gcf()
+    fig.savefig(path, facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close(fig)
+
+
 # ──────────────────────────────────────────────────────────────────────
 # 1) Logging
 # ──────────────────────────────────────────────────────────────────────
@@ -142,6 +190,8 @@ class Config(BaseModel):
     redo_savr_numbers: Optional[Dict[str, object]] = None
 
     figure_ranges: Optional[Dict[str, List[int]]] = None
+    
+    plotting: Optional[PlottingConfig] = None  
 
     # ---- v2 field validators ----
     @field_validator("procedure_counts")
@@ -504,6 +554,56 @@ def redistribute_future_by_population(df: pd.DataFrame,
     out = pd.concat([keep, expanded], ignore_index=True)
     return out
 
+
+# Read any redo-SAVR CSV
+def _read_redo_savr_csv_to_year_totals(path: Path) -> Dict[int, int]:
+    """
+    Robustly read a redo-SAVR CSV and return {year: total_count}.
+    Supports:
+      - columns: year,count
+      - columns: sex,age_band,year,count
+    If the header is missing, tries header=None with default names.
+    """
+    def _agg(df: pd.DataFrame) -> Dict[int, int]:
+        cols = {c.lower(): c for c in df.columns}
+        # normalize column access
+        def has(*names): return all(n in cols for n in names)
+        if has("year", "count"):
+            ycol, ccol = cols["year"], cols["count"]
+            tmp = df[[ycol, ccol]].copy()
+            tmp[ccol] = pd.to_numeric(tmp[ccol], errors="coerce").fillna(0).astype(int)
+            return tmp.groupby(ycol)[ccol].sum().astype(int).to_dict()
+        elif has("sex", "age_band", "year", "count"):
+            ycol, ccol = cols["year"], cols["count"]
+            tmp = df[[ycol, ccol]].copy()
+            tmp[ccol] = pd.to_numeric(tmp[ccol], errors="coerce").fillna(0).astype(int)
+            return tmp.groupby(ycol)[ccol].sum().astype(int).to_dict()
+        else:
+            return {}
+
+    # try normal header
+    try:
+        df = pd.read_csv(path)
+        out = _agg(df)
+        if out:
+            return out
+    except Exception:
+        pass
+
+    # try no header with default names
+    try:
+        df = pd.read_csv(path, header=None, names=["sex","age_band","year","count"])
+        out = _agg(df)
+        if out:
+            return out
+    except Exception:
+        pass
+
+    log.warning("Could not parse redo-SAVR CSV at %s; no targets loaded.", path)
+    return {}
+
+
+
 # ──────────────────────────────────────────────────────────────────────
 # 6) Simulator
 # ──────────────────────────────────────────────────────────────────────
@@ -616,6 +716,22 @@ class ViVSimulator:
     # ----- helpers ------------------------------------------------------
 
     def _load_redo_savr_numbers(self) -> Dict[int, int]:
+        """
+        Load absolute redo-SAVR targets.
+        Priority:
+          1) cfg.redo_savr_numbers.values or .path
+          2) procedure_counts.redo_savr (flexible CSV schema)
+        Also sets control flags:
+          - self.redo_mode: 'replace_rates' (default) or 'haircut'
+          - self.use_redo_rates: bool (disable rates if replace_rates)
+        """
+        # default mode
+        self.redo_mode = "replace_rates"
+        # store rates for later (we may disable them)
+        self.rr_savr_cfg = float(self.cfg.redo_rates.get("savr_after_savr", 0.0))
+        self.rr_tavi_cfg = float(self.cfg.redo_rates.get("savr_after_tavi", 0.0))
+
+        # --- 1) explicit redo_savr_numbers block
         out = {}
         rs = self.cfg.redo_savr_numbers or {}
         if isinstance(rs.get("values"), dict):
@@ -623,8 +739,25 @@ class ViVSimulator:
         elif rs.get("path"):
             p = Path(str(rs["path"]))
             if p.exists():
-                tmp = pd.read_csv(p)
-                out = {int(r["year"]): int(r["count"]) for _, r in tmp.iterrows()}
+                # accept both simple and detailed schemas
+                out = _read_redo_savr_csv_to_year_totals(p)
+        # mode if provided
+        if isinstance(rs, dict) and rs.get("mode"):
+            self.redo_mode = str(rs["mode"]).strip().lower()
+
+        # --- 2) fallback: procedure_counts.redo_savr
+        if not out and "redo_savr" in self.cfg.procedure_counts:
+            p = Path(str(self.cfg.procedure_counts["redo_savr"]))
+            if p.exists():
+                out = _read_redo_savr_csv_to_year_totals(p)
+
+        # Decide whether to use per-event redo rates during MC
+        # If we have absolute targets and mode == replace_rates, ignore rates in MC.
+        self.use_redo_rates = not (out and self.redo_mode == "replace_rates")
+        if out and not self.use_redo_rates:
+            if (self.rr_savr_cfg > 0) or (self.rr_tavi_cfg > 0):
+                log.info("Absolute redo-SAVR targets present (mode=replace_rates); "
+                         "ignoring redo_rates during simulation to avoid double counting.")
         return out
 
     def _risk_mix(self, proc_type: str, year: int) -> Dict[str, float]:
@@ -683,8 +816,9 @@ class ViVSimulator:
         fails    = defaultdict(int)
         viable   = defaultdict(int)
 
-        rr_savr = float(self.cfg.redo_rates.get("savr_after_savr", 0.0))
-        rr_tavi = float(self.cfg.redo_rates.get("savr_after_tavi", 0.0))
+        # Use configured rates unless we are in 'replace_rates' mode with absolute targets
+        rr_savr = self.rr_savr_cfg if self.use_redo_rates else 0.0
+        rr_tavi = self.rr_tavi_cfg if self.use_redo_rates else 0.0
 
         # loop over index rows
         for proc_type, df in (("tavi", self.tavi_df), ("savr", self.savr_df)):
@@ -840,55 +974,85 @@ def _plot_index_series(
     plt.ylabel("Procedures / yr")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(out_path)
-    plt.close()
+    # plt.savefig(out_path)
+    # plt.close()
+    _savefig_current(out_path)
+    
 
 def _plot_viv_pretty(realized_summary: pd.DataFrame,
                      year_lo: int, year_hi: int,
-                     out_path: Path) -> None:
+                     out_path: Path,
+                     bar_color: Optional[str] = None,
+                     label_bars: bool = True) -> None:
     """
-    Gray bars = total realized ViV; lines = TAVR-in-SAVR and TAVR-in-TAVR.
-    Value labels above each point are bigger, bold, and color-matched.
+    Bars = total realized ViV (lighter grey).
+    Lines = TAVR-in-SAVR (red) & TAVR-in-TAVR (blue), slightly faded.
+    Labels: TAVR-in-SAVR BELOW the line; TAVR-in-TAVR ABOVE the line.
     """
     sub = realized_summary[(realized_summary.year >= year_lo) & (realized_summary.year <= year_hi)]
     wide = sub.pivot(index="year", columns="viv_type", values="mean").fillna(0.0)
 
-    # Ensure both columns exist
     for c in ("tavi_in_savr", "tavi_in_tavi"):
         if c not in wide.columns:
             wide[c] = 0.0
-
     wide["total"] = wide["tavi_in_savr"] + wide["tavi_in_tavi"]
 
     fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
 
-    # Bars for total (keep gray & translucent)
-    ax.bar(wide.index, wide["total"], label="Total ViV (realized)", alpha=0.25, color="gray")
+    # --- Bars (lighter grey by default) ---
+    bar_color_final = bar_color or "#d0d0d0"  # lighter grey
+    bars = ax.bar(
+        wide.index, wide["total"],
+        label="Total ViV (realized)",
+        color=bar_color_final, alpha=0.5, zorder=1
+    )
 
-    # Lines
-    line_savr, = ax.plot(wide.index, wide["tavi_in_savr"], marker="o", label="TAVR-in-SAVR")
-    line_tavi, = ax.plot(wide.index, wide["tavi_in_tavi"], marker="s", label="TAVR-in-TAVR")
+    # --- Lines (faded red/blue) ---
+    line_savr, = ax.plot(
+        wide.index, wide["tavi_in_savr"],
+        marker="o", label="TAVR-in-SAVR",
+        color="red", alpha=0.8, linewidth=2, zorder=3
+    )
+    line_tavi, = ax.plot(
+        wide.index, wide["tavi_in_tavi"],
+        marker="s", label="TAVR-in-TAVR",
+        color="blue", alpha=0.8, linewidth=2, zorder=3
+    )
 
-    # Color-matched, bold labels with a small vertical offset
-    max_val = float(wide[["tavi_in_savr", "tavi_in_tavi"]].to_numpy().max()) if len(wide) else 0.0
-    y_offset = 0.015 * max_val  # 1.5% of max for readability
+    # --- Label offsets (separate for bars vs lines) ---
+    max_val = float(wide[["tavi_in_savr", "tavi_in_tavi", "total"]].to_numpy().max()) if len(wide) else 0.0
+    y_off_line = 0.015 * max_val  # 1.5%
+    y_off_bar  = 0.020 * max_val  # 2% (a touch higher to avoid collisions)
 
+    # Line labels:
+    #   TAVR-in-SAVR → BELOW the line
     for x, y in zip(wide.index, wide["tavi_in_savr"]):
-        ax.text(x, y + y_offset, f"{int(round(y))}",
-                ha="center", va="bottom", fontsize=11, fontweight="bold",
-                color=line_savr.get_color())
+        ax.text(x, y - y_off_line, f"{int(round(y))}",
+                ha="center", va="top", fontsize=11, fontweight="bold",
+                color=line_savr.get_color(), zorder=4)
+    #   TAVR-in-TAVR → ABOVE the line (as before)
     for x, y in zip(wide.index, wide["tavi_in_tavi"]):
-        ax.text(x, y + y_offset, f"{int(round(y))}",
+        ax.text(x, y + y_off_line, f"{int(round(y))}",
                 ha="center", va="bottom", fontsize=11, fontweight="bold",
-                color=line_tavi.get_color())
+                color=line_tavi.get_color(), zorder=4)
+
+    # Optional labels for total bars (above bars)
+    if label_bars:
+        for rect in bars:
+            h = rect.get_height()
+            x = rect.get_x() + rect.get_width() / 2.0
+            ax.text(x, h + y_off_bar, f"{int(round(h))}",
+                    ha="center", va="bottom", fontsize=11, fontweight="bold",
+                    color=bar_color_final, zorder=4)
 
     ax.set_title(f"Predicted ViV volume ({year_lo}–{year_hi})")
     ax.set_xlabel("Year")
     ax.set_ylabel("Procedures / yr")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(out_path)
+    fig.savefig(out_path, facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)
+
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -913,8 +1077,8 @@ def run_simulation(cfg: Config, out_dir: Path):
     plt.xlabel("Year"); plt.ylabel("Procedures / yr")
     plt.title("Observed + projected index procedures")
     plt.tight_layout(); plt.legend()
-    plt.savefig(out_dir / "index_volume_overlay.png"); plt.close()
-
+    # plt.savefig(out_dir / "index_volume_overlay.png"); plt.close()
+    _savefig_current(out_dir / "index_volume_overlay.png")
     # Run MC
     cand_runs, real_runs, flow_runs = [], [], []
     for i in range(cfg.simulation["n_runs"]):
@@ -981,11 +1145,21 @@ def run_simulation(cfg: Config, out_dir: Path):
     ylo, yhi = 2023, 2035
     if cfg.figure_ranges and cfg.figure_ranges.get("viv_years"):
         ylo, yhi = cfg.figure_ranges["viv_years"][0], cfg.figure_ranges["viv_years"][1]
+
+    bar_col = None
+    labels_on_bars = True
+    if cfg.plotting:
+        bar_col = cfg.plotting.viv_total_bar_color
+        labels_on_bars = bool(cfg.plotting.label_bars)
+
     _plot_viv_pretty(
         realized_adj[["year","viv_type","realized"]].rename(columns={"realized":"mean"}),
         ylo, yhi,
-        out_dir / f"image_C_viv_pretty_{ylo}_{yhi}.png"
+        out_dir / f"image_C_viv_prety_{ylo}_{yhi}.png",  # keep your filename; typo preserved if intentional
+        bar_color=bar_col,
+        label_bars=labels_on_bars
     )
+
 
     # Optional: index projection QC table for requested range
     if cfg.figure_ranges and cfg.figure_ranges.get("index_projection_years"):
@@ -1005,7 +1179,8 @@ def run_simulation(cfg: Config, out_dir: Path):
         plt.title(f"{name.upper()} projection {a}-{b}")
         plt.xlabel("Year"); plt.ylabel("Procedures / yr")
         plt.legend(); plt.tight_layout()
-        plt.savefig(out_dir / f"{name}_index_projection_{a}_{b}.png"); plt.close()
+        # plt.savefig(out_dir / f"{name}_index_projection_{a}_{b}.png"); plt.close()
+        _savefig_current(out_dir / f"{name}_index_projection_{a}_{b}.png")
 
     _write_projection_slice(sim.tavi_df, "tavi")
     _write_projection_slice(sim.savr_df, "savr")
@@ -1029,7 +1204,10 @@ def main():
     tag = f"_{cfg.scenario_tag}" if cfg.scenario_tag else ""
     out_dir = Path("runs") / cfg.experiment_name / f"{ts}{tag}"
     setup_logging(args.log_level, out_dir)
+    _apply_plot_theme(cfg.plotting)
     log.info("Outputs will be stored under %s", out_dir)
+    
+
 
     cand, real, flow = run_simulation(cfg, out_dir)
 

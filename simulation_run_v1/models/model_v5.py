@@ -33,7 +33,7 @@ from pydantic import BaseModel, validator
 from scipy.stats import norm
 import yaml
 import matplotlib.pyplot as plt          # only imported *after* log filter set
-
+import matplotlib.ticker as mtick
 import warnings
 import pydantic
 
@@ -631,40 +631,90 @@ def _save_viv_qc_plots(detail: pd.DataFrame, summary: pd.DataFrame,
     # ————————————————— line plot (total + per-type) ——————————————
     wide = (summary.pivot(index="year", columns="viv_type", values="mean")
                   .fillna(0))
+
+    # Stable, readable column order (types first, then total)
+    preferred = ["tavi_in_savr", "tavi_in_tavi"]
+    cols = [c for c in preferred if c in wide.columns] + \
+           [c for c in wide.columns if c not in preferred]
+    wide = wide[cols]
     wide["total"] = wide.sum(axis=1)
+
     wide.to_csv(out_dir / "viv_forecast_total.csv", index=True)
 
-    plt.figure()
+    # Plot with Image C-like markers + bold, color-matched labels
+    fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
+
+    def _marker_for(col: str) -> str:
+        return {"tavi_in_savr": "o", "tavi_in_tavi": "s", "total": "D"}.get(col, "o")
+
+    line_handles = {}
     for col in wide.columns:
-        plt.plot(wide.index, wide[col], label=col.replace("_", " "))
-    plt.title("Predicted ViV-TAVI volumes")
-    plt.xlabel("Calendar year")
-    plt.ylabel("Procedures / yr")
-    plt.tight_layout(); plt.legend()
-    plt.savefig(out_dir / "viv_forecast.png"); plt.close()
+        h, = ax.plot(
+            wide.index, wide[col].values,
+            label=col.replace("_", " "),
+            marker=_marker_for(col)
+        )
+        line_handles[col] = h
+
+    # Label each point with a bold integer in the line color
+    max_val = float(wide.to_numpy().max()) if not wide.empty else 0.0
+    y_offset = 0.015 * max_val if max_val > 0 else 0.5
+
+    for col, h in line_handles.items():
+        color = h.get_color()
+        ys = wide[col].values
+        for x, y in zip(wide.index, ys):
+            if pd.isna(y):
+                continue
+            ax.text(
+                x, y + y_offset, f"{int(round(y))}",
+                ha="center", va="bottom",
+                fontsize=11, fontweight="bold",
+                color=color
+            )
+
+    # Axes cosmetics (keep your 5-year ticks)
+    ax.set_title("Predicted ViV-TAVI volumes")
+    ax.set_xlabel("Calendar year")
+    ax.set_ylabel("Procedures / yr")
+    ax.xaxis.set_major_locator(mtick.MultipleLocator(5))
+    ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%d'))
+    if max_val > 0:
+        ax.set_ylim(top=max_val * 1.12)  # headroom for labels
+    fig.tight_layout()
+    ax.legend()
+
+    # Preserve themed background if using dark mode
+    fig.savefig(out_dir / "viv_forecast.png",
+                facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close(fig)
 
     # ————————————————— stacked risk ——————————————
     if "risk" in detail.columns:
         risk_wide = (detail.groupby(["year", "risk"])["mean"].sum()
                             .unstack(fill_value=0))
-        plt.figure()
-        plt.stackplot(risk_wide.index, risk_wide.T.values, labels=risk_wide.columns)
-        plt.title("ViV split by risk category")
-        plt.xlabel("Calendar year"); plt.ylabel("Procedures / yr")
-        plt.tight_layout(); plt.legend()
-        plt.savefig(out_dir / "viv_by_risk.png"); plt.close()
+        fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
+        ax.stackplot(risk_wide.index, risk_wide.T.values, labels=risk_wide.columns)
+        ax.set_title("ViV split by risk category")
+        ax.set_xlabel("Calendar year"); ax.set_ylabel("Procedures / yr")
+        fig.tight_layout(); ax.legend()
+        fig.savefig(out_dir / "viv_by_risk.png",
+                    facecolor=fig.get_facecolor(), edgecolor="none")
+        plt.close(fig)
 
     # ————————————————— stacked age ——————————————
     if "age_bin" in detail.columns:
         age_wide = (detail.groupby(["year", "age_bin"])["mean"].sum()
                            .unstack(fill_value=0)
                            .reindex(columns=_age_labels(age_edges), fill_value=0))
-        plt.figure()
-        plt.stackplot(age_wide.index, age_wide.T.values, labels=age_wide.columns)
-        plt.title("ViV split by index-age band")
-        plt.xlabel("Calendar year"); plt.ylabel("Procedures / yr")
-        plt.tight_layout(); plt.legend()
-        plt.savefig(out_dir / "viv_by_age.png"); plt.close()
+        fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
+        ax.stackplot(age_wide.index, age_wide.T.values, labels=age_wide.columns)
+        ax.set_title("ViV split by index-age band")
+        ax.set_xlabel("Calendar year"); ax.set_ylabel("Procedures / yr")
+        fig.tight_layout(); ax.legend()
+        fig.savefig(out_dir / "viv_by_age.png",
+                    facecolor=fig.get_facecolor(), edgecolor="none")
+        plt.close(fig)
 
 
 

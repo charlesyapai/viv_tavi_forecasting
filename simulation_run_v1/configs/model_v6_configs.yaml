@@ -9,6 +9,13 @@ years:
 procedure_counts:
   savr: data/registry_savr.csv
   tavi: data/registry_tavi.csv
+  redo_savr: data/registry_redo_savr.csv
+
+redo_savr_numbers:
+  path: data/registry_redo_savr.csv
+  mode: replace_rates   # prevents double counting 
+  # replace_rates (default): ignore redo_rates inside the MC and reconcile to the absolute counts at the end.
+  # haircut: keep redo_rates and subtract the absolute totals post‑hoc (use only if you really intend both).
 
 population_projection:
   path: data/korea_population_projection.csv
@@ -22,13 +29,13 @@ index_projection:
     method: population_rate    # linear | constant | population_rate
     window: 5                  # used if method=linear
     constant:                  # used if method=constant
-      from_year: 2025
+      from_year: 2024
       value: 30000
     pop_rate:                  # used if method=population_rate
       source: from_observed    # from_observed | from_config
       obs_years: 2018-2022     # or [2018,2019,2020,2021,2022]
       min_age: 60              # ages below get rate=0
-      annual_rate_growth: 0.02 # optional (if no anchors)
+      annual_rate_growth: 0.00 # optional (if no anchors)
       # anchors:               # alternative to annual_rate_growth
       #   2022: 1.00
       #   2030: 1.15
@@ -110,6 +117,12 @@ outputs:
 
 # Optional figure ranges
 figure_ranges:
-  viv_years: [2023, 2035]   # Image C
+  viv_years: [2015, 2035]   # Image C
   index_projection_years: [2025, 2035]  # QC CSV/PNG for index projection
-  observed_cutoff_year: 2023
+  observed_cutoff_year: [2023]
+
+
+plotting:
+  background: darkgrey          # options: light | darkgrey | black
+  viv_total_bar_color: "#FFFFFF"         # or "#39d353"  # GitHub green; or just "green"
+  label_bars: true

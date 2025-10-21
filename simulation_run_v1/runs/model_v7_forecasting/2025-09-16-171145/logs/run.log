@@ -1,0 +1,22 @@
+17:11:45 | INFO     | Outputs will be stored under runs/model_v7_forecasting/2025-09-16-171145
+17:11:45 | WARNING  | Population projection not found; population-based features limited.
+17:11:45 | INFO     | TAVI rows 209, SAVR rows 398 (obs+projection)
+17:11:50 | INFO     | Tables:
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/index/tavi_with_projection.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/index/savr_with_projection.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/flow/patient_flow_mean.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/viv/viv_candidates_totals.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/viv/viv_candidates_v5like.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/viv/viv_forecast.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/tables/viv/viv_forecast_realized.csv
+17:11:50 | INFO     | QC:
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/qc/index_projection/tavi_index_projection_*.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/qc/index_projection/savr_index_projection_*.csv
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/qc/redo/redo_savr_qc.csv
+17:11:50 | INFO     | Figures:
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/figures/index/image_A_tavi_index.png
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/figures/index/image_B_savr_index.png
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/figures/index/index_volume_overlay.png
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/figures/flow/flow_tavi.png
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/figures/flow/flow_savr.png
+17:11:50 | INFO     |   runs/model_v7_forecasting/2025-09-16-171145/figures/viv/image_C_viv_pretty_*.png
