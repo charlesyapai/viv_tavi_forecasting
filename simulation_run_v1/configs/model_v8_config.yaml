@@ -4,7 +4,7 @@ korea_demo:
 
   population_input:
     mode: "combined"
-    combined_csv: "../data/korea_population_combined.csv"
+    combined_csv: "data/korea_population_combined.csv"  # see docstring for expected schema
 
   learning_windows:
     tavi: [2015, 2021]
@@ -12,9 +12,9 @@ korea_demo:
     redo_savr: [2012, 2021]
 
   registry:
-    tavi: "../data/registry_tavi.csv"
-    savr: "../data/registry_savr.csv"
-    redo_savr: "../data/registry_redo_savr.csv"
+    tavi: "data/registry_tavi.csv"        # long or wide accepted
+    savr: "data/registry_savr.csv"        # long or wide accepted
+    redo_savr: "data/registry_redo_savr.csv"  # optional if redo.mode=from_projection
 
   # Annual multipliers (anchors → linear interpolate) applied to baseline rates
   rate_multipliers:

@@ -49,10 +49,10 @@ python simulation_run_v1/models/model_v8.py \
 from __future__ import annotations 
 
 # ──────────────────────────────────────────────────────────────────────
-# Defaults that you can customize at the very top of the script
+# Pathing Fixes
 # ──────────────────────────────────────────────────────────────────────
 
-# Top of model_v8.py — replace the two defaults with these:
+
 from pathlib import Path
 
 DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parents[1] / "configs" / "model_v8_config.yaml")
@@ -68,7 +68,6 @@ DEFAULT_SCENARIO = "korea_demo"
 import argparse
 import dataclasses
 import logging
-from pathlib import Path
 from typing import Dict, Iterable, List, Literal, Optional, Tuple
 
 import numpy as np
@@ -345,10 +344,33 @@ class Config:
 def load_config(path: Path, scenario: str) -> Config:
     """
     Load YAML config and construct a Config dataclass for the given scenario key.
+    Paths inside the YAML (e.g., "data/...") are resolved **relative to the project root**
+    (the parent folder of 'models/' and 'configs/'), so you can keep tidy paths like
+    "data/registry_tavi.csv" regardless of where you run the script from.
+
     WHEN USED: at program start.
     """
     if yaml is None:
         raise RuntimeError("PyYAML is required. Please `pip install pyyaml`.")
+
+    # --- NEW: project root resolver -----------------------------------------
+    # We treat the parent of 'models/' (i.e., simulation_run_v1/) as PROJECT_ROOT.
+    # Example: simulation_run_v1/models/model_v8.py → PROJECT_ROOT = simulation_run_v1/
+    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+    def _resolve_from_root(maybe_path: Optional[str]) -> Optional[str]:
+        """
+        Resolve a file/directory path relative to PROJECT_ROOT, unless it's absolute or None.
+        Accepts None/"null"/"" and returns None.
+        """
+        if maybe_path is None:
+            return None
+        s = str(maybe_path).strip()
+        if s == "" or s.lower() in {"none", "null"}:
+            return None
+        p = Path(s)
+        return str(p if p.is_absolute() else (PROJECT_ROOT / p).resolve())
+    # -------------------------------------------------------------------------
 
     with open(path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f)
@@ -361,14 +383,42 @@ def load_config(path: Path, scenario: str) -> Config:
     def _dm_list(lst):
         return [DurabilityMode(**d) for d in lst]
 
+    # --- NEW: resolve all file/dir paths from PROJECT_ROOT -------------------
+    # output_dir
+    output_dir = _resolve_from_root(cfg["output_dir"])
+
+    # population_input (handle both modes but safely resolve any file fields)
+    pop_cfg = dict(cfg["population_input"])  # shallow copy
+    if "combined_csv" in pop_cfg:
+        pop_cfg["combined_csv"] = _resolve_from_root(pop_cfg.get("combined_csv"))
+    if "age_totals_csv" in pop_cfg:
+        pop_cfg["age_totals_csv"] = _resolve_from_root(pop_cfg.get("age_totals_csv"))
+    if "sex_ratio_csv" in pop_cfg:
+        pop_cfg["sex_ratio_csv"] = _resolve_from_root(pop_cfg.get("sex_ratio_csv"))
+
+    # registries
+    reg_tavi = _resolve_from_root(cfg["registry"]["tavi"])
+    reg_savr = _resolve_from_root(cfg["registry"]["savr"])
+    reg_redo = _resolve_from_root(cfg["registry"].get("redo_savr"))
+
+    # survival csvs
+    surv_low = _resolve_from_root(cfg["survival"]["low_csv"])
+    surv_ih  = _resolve_from_root(cfg["survival"]["ih_csv"])
+
+    # redo file (optional)
+    redo_cfg = dict(cfg.get("redo", {}))
+    if "file" in redo_cfg:
+        redo_cfg["file"] = _resolve_from_root(redo_cfg.get("file"))
+    # -------------------------------------------------------------------------
+
     conf = Config(
         experiment_name=cfg["experiment_name"],
-        output_dir=cfg["output_dir"],
-        population_input=PopulationInput(**cfg["population_input"]),
+        output_dir=output_dir,
+        population_input=PopulationInput(**pop_cfg),
         learning_windows=LearningWindows(**cfg.get("learning_windows", {})),
-        registry_tavi_csv=cfg["registry"]["tavi"],
-        registry_savr_csv=cfg["registry"]["savr"],
-        registry_redo_csv=cfg["registry"].get("redo_savr"),
+        registry_tavi_csv=reg_tavi,
+        registry_savr_csv=reg_savr,
+        registry_redo_csv=reg_redo,
         rate_multipliers=cfg.get("rate_multipliers", {}),
         durability=DurabilitySpec(
             tavi_modes=_dm_list(cfg["durability"]["tavi"]),
@@ -377,15 +427,15 @@ def load_config(path: Path, scenario: str) -> Config:
             savr_age_threshold=int(cfg["durability"]["savr"].get("age_threshold", 70)),
         ),
         survival=SurvivalCurves(
-            low_csv=cfg["survival"]["low_csv"],
-            ih_csv=cfg["survival"]["ih_csv"],
+            low_csv=surv_low,
+            ih_csv=surv_ih,
             risk_mix_anchors=cfg["survival"]["risk_mix_anchors"],
         ),
         penetration=PenetrationSpec(
             anchors_tavr_in_tavr=cfg["penetration"]["tavr_in_tavr"],
             anchors_tavr_in_savr=cfg["penetration"]["tavr_in_savr"],
         ),
-        redo=RedoSpec(**cfg.get("redo", {})),
+        redo=RedoSpec(**redo_cfg),
         simulation=SimulationSpec(**cfg.get("simulation", {})),
     )
     return conf
