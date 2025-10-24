@@ -1,0 +1,10 @@
+11:04:57 | INFO     | Outputs will be stored under runs/model_v6_forecasting/2025-09-16-110457
+11:04:57 | WARNING  | Population projection not found; population-based features limited.
+11:04:58 | INFO     | TAVI rows 214, SAVR rows 403 (obs+projection)
+11:05:04 | INFO     | Files written:
+11:05:04 | INFO     |   ViV candidates:      runs/model_v6_forecasting/2025-09-16-110457/viv_candidates.csv
+11:05:04 | INFO     |   ViV forecast:        runs/model_v6_forecasting/2025-09-16-110457/viv_forecast.csv
+11:05:04 | INFO     |   (Adj) ViV realized:  runs/model_v6_forecasting/2025-09-16-110457/viv_forecast_realized.csv
+11:05:04 | INFO     |   Patient flow:        runs/model_v6_forecasting/2025-09-16-110457/patient_flow.csv
+11:05:04 | INFO     |   Figures: image_A_tavi_index.png, image_B_savr_index.png, image_C_viv_pretty_*.png
+11:05:04 | INFO     |   QC: tavi/savr_index_projection_*.csv + .png, redo_savr_qc.csv

@@ -1,0 +1,128 @@
+experiment_name: model_v6_forecasting
+scenario_tag:    null
+
+years:
+  start: 2000
+  simulate_from: 2015
+  end: 2035
+
+procedure_counts:
+  savr: data/registry_savr.csv
+  tavi: data/registry_tavi.csv
+  redo_savr: data/registry_redo_savr.csv
+
+redo_savr_numbers:
+  path: data/registry_redo_savr.csv
+  mode: replace_rates   # prevents double counting 
+  # replace_rates (default): ignore redo_rates inside the MC and reconcile to the absolute counts at the end.
+  # haircut: keep redo_rates and subtract the absolute totals post‑hoc (use only if you really intend both).
+
+population_projection:
+  path: data/korea_population_projection.csv
+  year_col: year
+  age_col: age
+  pop_col: population
+
+# NEW: explicit index projection settings per procedure
+index_projection:
+  tavi:
+    method: population_rate    # linear | constant | population_rate
+    window: 5                  # used if method=linear
+    constant:                  # used if method=constant
+      from_year: 2024
+      value: 30000
+    pop_rate:                  # used if method=population_rate
+      source: from_observed    # from_observed | from_config
+      obs_years: 2018-2022     # or [2018,2019,2020,2021,2022]
+      min_age: 60              # ages below get rate=0
+      annual_rate_growth: 0.00 # optional (if no anchors)
+      # anchors:               # alternative to annual_rate_growth
+      #   2022: 1.00
+      #   2030: 1.15
+      #   2035: 1.25
+      # rates_by_age: {}       # only if source=from_config (per single-year age)
+  savr:
+    method: constant
+    window: 5
+    constant:
+      from_year: 2024
+      value: 2000
+    pop_rate:
+      source: from_observed
+      obs_years: 2018-2022
+      min_age: 60
+      annual_rate_growth: -0.01
+
+risk_model:
+  categories: 3
+  use_age_hazard: true
+
+durability:
+  savr_bioprosthetic:
+    lt70:  {mean: 10,  sd: 5,  weight: 1.0}
+    gte70: {mean: 17,  sd: 5,  weight: 1.0}
+  tavi:
+    early: {mean: 4,  sd: 1.5, weight: 0.20}
+    late:  {mean: 11.5, sd: 3.5, weight: 0.80}
+
+survival_curves:
+  low:          {median: 11, sd: 3}
+  intermediate: {median:  7, sd: 2}
+  high:         {median:  6, sd: 2}
+  int_high:     {median:  6, sd: 2}
+  low_risk:     {median: 11, sd: 3}
+  int_high_risk: {median: 6,  sd: 2}
+
+age_hazard:
+  ref_age: 75
+  hr_per5:
+    low:          1.30
+    intermediate: 1.04
+    high:         1.01
+
+risk_mix:
+  savr: {low: 0.70, intermediate: 0.20, high: 0.10}
+  tavi:
+    2007-2015: {low: 0.29, intermediate: 0.20, high: 0.51}
+    2015-2019: {low: 0.53, intermediate: 0.24, high: 0.23}
+    2019-2024: {low: 0.55, intermediate: 0.35, high: 0.10}
+    2024-2035: {low: 0.55, intermediate: 0.35, high: 0.10}
+    2035-2100: {low: 0.55, intermediate: 0.35, high: 0.10}
+
+penetration:
+  tavi_in_tavi:
+    2007-2022: 0.10
+    '2035':    0.60
+  tavi_in_savr:
+    2007-2022: 0.60
+    '2035':    0.80
+
+redo_rates:
+  savr_after_savr: 0.04
+  savr_after_tavi: 0.01
+
+redo_savr_numbers:
+  path: data/registry_redo_savr.csv # columns: year,count
+
+simulation:
+  n_runs: 20
+  rng_seed: 20250714
+
+open_age_bin_width: 20
+age_bins: [60, 65, 70, 75, 80, 85, 100]
+
+outputs:
+  csv:  out/viv_forecast.csv
+  figs: out/figs/
+
+# Optional figure ranges
+figure_ranges:
+  viv_years: [2015, 2035]   # Image C
+  index_projection_years: [2025, 2035]  # QC CSV/PNG for index projection
+  observed_cutoff_year: [2023]
+
+
+plotting:
+  background: darkgrey          # options: light | darkgrey | black
+  viv_total_bar_color: "#FFFFFF"         # or "#39d353"  # GitHub green; or just "green"
+  label_bars: true

@@ -1,0 +1,23 @@
+18:31:20 | INFO     | Outputs will be stored under runs/model_v7_forecasting/2025-09-16-183120
+18:31:20 | WARNING  | Population projection not found; population-based features limited.
+18:31:20 | INFO     | TAVI rows 209, SAVR rows 398 (obs+projection)
+18:31:20 | INFO     | Absolute redo targets present (mode=replace_rates); ignoring redo_rates during simulation.
+18:31:26 | INFO     | Tables:
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/index/tavi_with_projection.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/index/savr_with_projection.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/flow/patient_flow_mean.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/viv/viv_candidates_totals.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/viv/viv_candidates_v5like.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/viv/viv_forecast.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/tables/viv/viv_forecast_realized.csv
+18:31:26 | INFO     | QC:
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/qc/index_projection/tavi_index_projection_*.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/qc/index_projection/savr_index_projection_*.csv
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/qc/redo/redo_savr_qc.csv
+18:31:26 | INFO     | Figures:
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/figures/index/image_A_tavi_index.png
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/figures/index/image_B_savr_index.png
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/figures/index/index_volume_overlay.png
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/figures/flow/flow_tavi.png
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/figures/flow/flow_savr.png
+18:31:26 | INFO     |   runs/model_v7_forecasting/2025-09-16-183120/figures/viv/image_C_viv_pretty_*.png

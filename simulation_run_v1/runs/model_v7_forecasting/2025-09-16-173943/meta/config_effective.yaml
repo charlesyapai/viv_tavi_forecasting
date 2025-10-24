@@ -1,0 +1,155 @@
+experiment_name: model_v7_forecasting
+scenario_tag: null
+years:
+  start: 2000
+  simulate_from: 2015
+  end: 2035
+procedure_counts:
+  savr: data/registry_savr.csv
+  tavi: data/registry_tavi.csv
+  redo_savr: data/registry_redo_savr.csv
+index_projection:
+  tavi:
+    method: population_rate
+    window: 5
+    constant:
+      from_year: 2024
+      value: 30000
+    pop_rate:
+      source: from_observed
+      obs_years: 2018-2022
+      min_age: 60
+      annual_rate_growth: 0.0
+      anchors: null
+      rates_by_age: null
+  savr:
+    method: constant
+    window: 5
+    constant:
+      from_year: 2024
+      value: 2000
+    pop_rate:
+      source: from_observed
+      obs_years: 2018-2022
+      min_age: 60
+      annual_rate_growth: 0.0
+      anchors: null
+      rates_by_age: null
+volume_extrapolation: null
+open_age_bin_width: 20
+age_bins:
+- 60
+- 65
+- 70
+- 75
+- 80
+- 85
+- 100
+durability:
+  savr_bioprosthetic:
+    lt70:
+      mean: 10.0
+      sd: 5.0
+      weight: 1.0
+    gte70:
+      mean: 17.0
+      sd: 5.0
+      weight: 1.0
+  tavi:
+    early:
+      mean: 4.0
+      sd: 1.5
+      weight: 0.2
+    late:
+      mean: 11.5
+      sd: 3.5
+      weight: 0.8
+survival_curves:
+  low:
+    median: 11.0
+    sd: 3.0
+  intermediate:
+    median: 7.0
+    sd: 2.0
+  high:
+    median: 6.0
+    sd: 2.0
+  low_risk:
+    median: 11.0
+    sd: 3.0
+  int_high_risk:
+    median: 6.0
+    sd: 2.0
+risk_model:
+  categories: 3
+  use_age_hazard: true
+risk_mix:
+  savr:
+    low: 0.7
+    intermediate: 0.2
+    high: 0.1
+  tavi:
+    2007-2015:
+      low: 0.29
+      intermediate: 0.2
+      high: 0.51
+    2015-2019:
+      low: 0.53
+      intermediate: 0.24
+      high: 0.23
+    2019-2024:
+      low: 0.55
+      intermediate: 0.35
+      high: 0.1
+    2024-2035:
+      low: 0.55
+      intermediate: 0.35
+      high: 0.1
+age_hazard:
+  ref_age: 75
+  hr_per5:
+    low: 1.3
+    intermediate: 1.04
+    high: 1.01
+penetration:
+  tavi_in_tavi:
+    2007-2022: 0.1
+    '2035': 0.6
+  tavi_in_savr:
+    2007-2022: 0.6
+    '2035': 0.8
+redo_rates:
+  savr_after_savr: 0.04
+  savr_after_tavi: 0.01
+simulation:
+  n_runs: 20
+  rng_seed: 20250714
+  min_dur_years: 1.0
+outputs:
+  csv: out/viv_forecast.csv
+  figs: out/figs/
+population_projection:
+  path: data/korea_population_projection.csv
+  year_col: year
+  age_col: age
+  pop_col: population
+redo_savr_numbers:
+  path: data/registry_redo_savr.csv
+  mode: replace_rates
+  fill_missing:
+    method: forward
+    range:
+    - 2015
+    - 2035
+figure_ranges:
+  viv_years:
+  - 2015
+  - 2035
+  index_projection_years:
+  - 2025
+  - 2035
+plotting:
+  background: light
+  viv_total_bar_color: null
+  label_bars: true
+  image_c_source: both
