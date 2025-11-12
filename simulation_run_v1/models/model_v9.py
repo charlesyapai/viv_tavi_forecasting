@@ -9,6 +9,11 @@ and *adds* a built‑in pre‑processor to:
   • Compute fixed per‑capita risk scores for TAVI, SAVR, and redo‑SAVR from 2023/2024
   • (Optionally) project absolute redo‑SAVR yearly targets (to subtract from TAVR‑in‑SAVR)
 
+New in this revision:
+  • Demography plots: age‑band lines by sex; year×age heatmap (total population)
+  • Risk plots: per‑procedure heatmaps for 2023/2024 and delta; grouped bar summary
+    using the configured risk rule (avg_2023_2024 by default)
+
 After precomputation, it runs the same Monte‑Carlo engine and output regimen as v7:
   runs/<experiment_name>/<timestamp>/... (tables, QC, figures).
 
@@ -22,32 +27,22 @@ age‑specific *per‑capita* procedure rates from 2023–2024 and multiply by
 projected population to form the baseline index volumes for 2025–2035.
 Durability, survival, penetration, and redo mechanics remain as before.
 
-Layout
-------
-1) Precompute (optional):
-   - build_age_and_sex_population(): from korea_population_combined.csv →
-       derived/age_projections_by_year_age_sex.csv        (year, age, sex, population)
-       derived/age_projections_by_year_age_allsex.csv     (year, age, population)
-       derived/age_projections_by_year_band_sex.csv       (year, sex, age_band, population)
-   - compute_risk_scores(): from observed 2023/2024 registry CSVs + population →
-       derived/baseline_risk_scores_by_sex.csv            (proc,year,sex,age_band,risk)
-   - project_redo_savr_targets(): fixed risks × projected population →
-       derived/redo_savr_targets.csv                      (year,count)
+New plots (demography + risk)
+-----------------------------
+Under figures/demography:
+  • age_projection_lines_Men.png / age_projection_lines_Women.png
+    – Lines by 5‑year bands (50–54..≥85) for 2025–2035 showing projected population
+  • age_heatmap_allsex.png
+    – Heatmap (Year × Age) of population (Men+Women), helpful to eyeball cohort waves
 
-2) Monte‑Carlo engine:
-   - We *reuse* the v7 engine codepaths (population_rate index projection,
-     redo_savr_numbers replace_rates, plotting, tables). The code here is a direct
-     copy of v7 with small additions (noted inline).
-
-Notes on the “korea_population_combined.csv” format
----------------------------------------------------
-• Units are 10,000 people
-• Present rows (counts): 0-14, 15-24, 25-49, 50-64, ≥65, ≥70, ≥75, ≥85
-• Present rows (sex ratios; men per 100 women): ≥65, ≥70, ≥75, ≥85
-• Years include 2022, 2023, 2024, 2025, 2030, 2040, 2050. We linearly interpolate
-  *both* counts and sex ratios to fill 2025–2035 (2025→2030, 2030→2040).
-
-This file is not re‑written; we *read* it and emit the derived CSVs listed above.
+Under figures/risks (for each of {tavi, savr, redo_savr}):
+  • <proc>_heatmap_2023.png, <proc>_heatmap_2024.png
+    – Heatmaps of per‑capita risk by (Sex × Age‑band)
+  • <proc>_heatmap_delta_2024_vs_2023.png
+    – Relative change (2024 − 2023); highlights drift in uptake by group
+  • <proc>_bar_avg_risks.png
+    – Grouped bars using the configured 'risk_rule' (avg_2023_2024 by default) to
+      summarize risks by age‑band, split by sex
 """
 
 from __future__ import annotations
@@ -311,28 +306,38 @@ class Dirs:
 # Utilities (parsing / math)
 # =============================================================================
 
-def parse_age_band(band: str, open_width: int) -> Tuple[int, int]:
-    s = band.strip().lower()
-    # normalize Unicode variants like ≥, ≤, ＋
-    s = s.replace("≥", ">=").replace("≤", "<=").replace("+", "+").replace("＋", "+")
-    s = re.sub(r'\s*(yrs?|years?)\s*', '', s)
+def parse_age_band(band: str, open_width: int) -> tuple[int, int]:
+    """Parses age-band labels like '<5yr', '5-9', '≥80', '>=85', '>80', '80+', etc."""
+    s = str(band).strip().lower()
+    # Normalize Unicode and variants
+    s = (
+        s.replace("≥", ">=").replace("≤", "<=")
+         .replace("–", "-").replace("—", "-")
+         .replace("yrs", "").replace("yr", "").replace("years", "").replace("y", "")
+         .strip()
+    )
 
-    open_lo = None
-    m = re.match(r'(>=\s*(\d+))|(\s*(\d+)\+)', s)
+    # Match ≥ or > style ("≥85", ">=85", ">85")
+    m = re.match(r'^(>=|>)\s*(\d+)$', s)
     if m:
-        open_lo = int(m.group(2) or m.group(4))
-    if open_lo is None:
-        m = re.match(r'>\s*(\d+)', s)
-        if m:
-            open_lo = int(m.group(1)) + 1
-    if open_lo is not None:
-        return open_lo, open_lo + open_width
-    m = re.match(r'<\s*(\d+)', s)
+        lo = int(m.group(2))
+        if m.group(1) == '>':
+            lo += 1
+        return lo, lo + open_width
+
+    # Match ≤ or < style ("<5", "<5y", "<5yr", "<=5")
+    m = re.match(r'^(<=|<)\s*(\d+)$', s)
     if m:
-        return 0, int(m.group(1))
-    m = re.match(r'(\d+)\s*-\s*(\d+)', s)
+        hi = int(m.group(2))
+        if m.group(1) == '<':
+            hi = hi
+        return 0, hi
+
+    # Match ranges ("50-54", "25 - 29", etc.)
+    m = re.match(r'^(\d+)\s*-\s*(\d+)$', s)
     if m:
         return int(m.group(1)), int(m.group(2)) + 1
+
     raise ValueError(f"Unrecognised age band: '{band}'")
 
 def _age_labels(edges: List[int]) -> List[str]:
@@ -371,51 +376,29 @@ def _interp_scalar_by_year(year: int, anchors: Dict[str, float]) -> float:
 # =============================================================================
 
 def _read_population_table(path: Path) -> tuple[pd.DataFrame, pd.DataFrame, list[int]]:
-    """
-    Reads simulation_run_v1/data/korea_population_combined.csv into two tidy tables:
-      counts_table   : index=row label (e.g., '50-64','≥65',...) columns=years -> counts
-      sexratio_table : index='≥65','≥70','≥75','≥85' columns=years -> men per 100 women
-    Returns (counts_table, sexratio_table, years_sorted)
-
-    The function is robust to minor header/whitespace variations.
-    """
     df = pd.read_csv(path)
-    # Identify the split between counts and sex ratio blocks
-    # Heuristic: rows before a row starting with 'Sex ratio' are counts; after that are ratios.
     rows = df.iloc[:, 0].astype(str).str.strip()
     if not rows.str.contains("Sex", case=False).any():
         raise ValueError("Population CSV must contain a 'Sex ratio' section header row.")
     split_idx = rows[rows.str.contains("Sex", case=False)].index[0]
-
     counts = df.iloc[:split_idx, :].copy()
     ratios  = df.iloc[split_idx+1:, :].copy()
-
-    # the first column is the label; remaining columns are years
     counts.iloc[:, 0] = counts.iloc[:, 0].astype(str).str.strip()
     ratios.iloc[:, 0]  = ratios.iloc[:, 0].astype(str).str.strip()
-
     year_cols_counts = [c for c in counts.columns[1:] if re.match(r'^\d{4}$', str(c))]
     year_cols_ratios = [c for c in ratios.columns[1:] if re.match(r'^\d{4}$', str(c))]
     years_sorted = sorted(set(map(int, year_cols_counts)) | set(map(int, year_cols_ratios)))
-
     counts = counts[[counts.columns[0]] + [str(y) for y in years_sorted]]
     ratios  = ratios[[ratios.columns[0]]  + [str(y) for y in years_sorted]]
     counts = counts.set_index(counts.columns[0])
     ratios  = ratios.set_index(ratios.columns[0])
-
-    # Coerce to numeric, tolerating blanks
     counts = counts.apply(pd.to_numeric, errors="coerce").fillna(0.0)
     ratios  = ratios.apply(pd.to_numeric, errors="coerce").fillna(np.nan)
-
     return counts, ratios, years_sorted
 
 def _interpolate_series(xs: list[int], ys_known: dict[int,float], years_target: list[int]) -> np.ndarray:
-    """Linear interpolate over available anchors (xs)."""
     xs_sort = sorted(xs)
     yvec = np.array([ys_known.get(x, np.nan) for x in xs_sort], dtype=float)
-    # forward/back fill edges with first/last known
-    first = np.nanmin(yvec) if np.isnan(yvec).all() else yvec[~np.isnan(yvec)][0]
-    last  = np.nanmax(yvec) if np.isnan(yvec).all() else yvec[~np.isnan(yvec)][-1]
     yvec = pd.Series(yvec).interpolate().fillna(method="bfill").fillna(method="ffill").to_numpy()
     return np.interp(years_target, xs_sort, yvec)
 
@@ -427,24 +410,11 @@ def build_age_and_sex_population(pop_csv: Path,
                                  split_75_84: tuple[float,float],
                                  sex_ratio_50_64: float,
                                  open_width: int) -> tuple[Path, Path, Path]:
-    """
-    From coarse counts + sex ratios → three outputs:
-      1) age_projections_by_year_band_sex.csv
-      2) age_projections_by_year_age_sex.csv
-      3) age_projections_by_year_age_allsex.csv
-
-    Only bands ≥50 are emitted:
-      50-54, 55-59, 60-64, 65-69, 70-74, 75-79, 80-84, ≥85
-    """
     out_dir.mkdir(parents=True, exist_ok=True)
-
     counts, ratios, years_available = _read_population_table(pop_csv)
-
-    # years for risk (keep as‑is) + years for projection (interpolate 2025..2035 inclusively)
     y0, y1 = int(project_span[0]), int(project_span[1])
     years_target = list(range(y0, y1+1))
 
-    # Helper to fetch an interpolated column vector (for any row label)
     def interp_row(label: str, target_years: list[int], is_ratio=False) -> np.ndarray:
         table = ratios if is_ratio else counts
         if label not in table.index:
@@ -452,30 +422,25 @@ def build_age_and_sex_population(pop_csv: Path,
         known = {int(c): float(table.at[label, str(c)]) for c in table.columns}
         return _interpolate_series(sorted(known.keys()), known, target_years)
 
-    # Population counts (people) for ≥50 buckets
     pop_50_64 = interp_row("50-64", years_target, is_ratio=False) * units_multiplier
     pop_ge65  = interp_row("≥65",   years_target, is_ratio=False) * units_multiplier
     pop_ge70  = interp_row("≥70",   years_target, is_ratio=False) * units_multiplier
     pop_ge75  = interp_row("≥75",   years_target, is_ratio=False) * units_multiplier
     pop_ge85  = interp_row("≥85",   years_target, is_ratio=False) * units_multiplier
 
-    # Derive 5‑year buckets ≥65
     pop_65_69 = pop_ge65 - pop_ge70
     pop_70_74 = pop_ge70 - pop_ge75
     pop_75_84 = pop_ge75 - pop_ge85
-    # split 75‑84 into 75‑79 and 80‑84
     s75, s80 = float(split_75_84[0]), float(split_75_84[1])
     pop_75_79 = pop_75_84 * s75 / (s75 + s80)
     pop_80_84 = pop_75_84 * s80 / (s75 + s80)
 
-    # Split 50‑64 into 50‑54, 55‑59, 60‑64
     s1, s2, s3 = float(split_50_64[0]), float(split_50_64[1]), float(split_50_64[2])
     denom = (s1 + s2 + s3)
     pop_50_54 = pop_50_64 * s1 / denom
     pop_55_59 = pop_50_64 * s2 / denom
     pop_60_64 = pop_50_64 * s3 / denom
 
-    # Sex ratios (men per 100 women) for ≥65 thresholds; 50–64 handled via default
     r_ge65 = interp_row("≥65", years_target, is_ratio=True)
     r_ge70 = interp_row("≥70", years_target, is_ratio=True)
     r_ge75 = interp_row("≥75", years_target, is_ratio=True)
@@ -483,24 +448,19 @@ def build_age_and_sex_population(pop_csv: Path,
     r_50_64 = np.full_like(r_ge65, float(sex_ratio_50_64), dtype=float)
 
     def split_sex(total: np.ndarray, ratio_m_per100w: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
-        # men = total * r/(100+r); women = total - men
         men = total * (ratio_m_per100w / (100.0 + ratio_m_per100w))
         women = total - men
         return men, women
 
-    # Apply sex ratios by bracket
-    # 50-64 uses r_50_64
     m_50_54, f_50_54 = split_sex(pop_50_54, r_50_64)
     m_55_59, f_55_59 = split_sex(pop_55_59, r_50_64)
     m_60_64, f_60_64 = split_sex(pop_60_64, r_50_64)
-    # ≥65 brackets use the closest threshold ratio
     m_65_69, f_65_69 = split_sex(pop_65_69, r_ge65)
     m_70_74, f_70_74 = split_sex(pop_70_74, r_ge70)
     m_75_79, f_75_79 = split_sex(pop_75_79, r_ge75)
     m_80_84, f_80_84 = split_sex(pop_80_84, r_ge75)
     m_ge85,  f_ge85  = split_sex(pop_ge85,  r_ge85)
 
-    # Build a tidy by‑band/by‑sex table
     bands = ["50-54","55-59","60-64","65-69","70-74","75-79","80-84","≥85"]
     men_series   = [m_50_54, m_55_59, m_60_64, m_65_69, m_70_74, m_75_79, m_80_84, m_ge85]
     women_series = [f_50_54, f_55_59, f_60_64, f_65_69, f_70_74, f_75_79, f_80_84, f_ge85]
@@ -512,7 +472,6 @@ def build_age_and_sex_population(pop_csv: Path,
             rows.append([y, "Women", b, int(round(fvec[j]))])
     by_band_sex = pd.DataFrame(rows, columns=["year","sex","age_band","population"])
 
-    # Expand to single‑year ages for engine consumption (≥85 → ≥85..hi where hi = 85+open_width-1)
     def expand_to_ages(df_band: pd.DataFrame, open_width: int) -> pd.DataFrame:
         rows2 = []
         for (y, sex, band), grp in df_band.groupby(["year","sex","age_band"]):
@@ -530,7 +489,6 @@ def build_age_and_sex_population(pop_csv: Path,
     by_age_all = (by_age_sex.groupby(["year","age"])["population"].sum()
                             .reset_index().rename(columns={"population":"population"}))
 
-    # Write three outputs
     p_band_sex = out_dir / "age_projections_by_year_band_sex.csv"
     p_age_sex  = out_dir / "age_projections_by_year_age_sex.csv"
     p_age_all  = out_dir / "age_projections_by_year_age_allsex.csv"
@@ -543,21 +501,10 @@ def build_age_and_sex_population(pop_csv: Path,
 def compute_risk_scores(proc_files: Dict[str, Path],
                         population_band_sex_csv: Path,
                         risk_years: list[int]) -> Path:
-    """
-    For each of {tavi,savr,redo_savr}, for each year in risk_years and for each sex×age_band,
-    compute: risk = observed_count / population
-    Inputs:
-      • procedure CSVs in long format: sex, age_band, year, count
-      • population_band_sex_csv: year, sex, age_band, population (from precompute)
-    Output:
-      • derived/baseline_risk_scores_by_sex.csv
-    """
     pop = pd.read_csv(population_band_sex_csv)
     pop = pop[pop["year"].isin(risk_years)]
-    # Map registry age bands (especially ≥80) from population bands
     def population_for(sex: str, band: str, year: int) -> int:
-        if band.strip() == "≥80" or band.strip().lower() in (">=80", "80+"):
-            # ≥80 = 80-84 + ≥85
+        if band.strip() in ("≥80", ">=80", "80+"):
             p80_84 = int(pop[(pop.sex==sex)&(pop.age_band=="80-84")&(pop.year==year)]["population"].sum())
             pge85  = int(pop[(pop.sex==sex)&(pop.age_band=="≥85")&(pop.year==year)]["population"].sum())
             return p80_84 + pge85
@@ -568,7 +515,6 @@ def compute_risk_scores(proc_files: Dict[str, Path],
         if proc not in proc_files:
             continue
         df = pd.read_csv(proc_files[proc])
-        # normalize column names
         cols = {c.lower(): c for c in df.columns}
         req = ["sex","age_band","year","count"]
         if not all(k in cols for k in req):
@@ -592,15 +538,10 @@ def project_redo_savr_targets(risk_scores_csv: Path,
                               population_band_sex_csv: Path,
                               risk_rule: str,
                               project_span: tuple[int,int]) -> Path:
-    """
-    Using redo‑SAVR risks and projected population, build absolute yearly targets (year,count)
-    for [project_span]. risk_rule ∈ {2023_only, 2024_only, avg_2023_2024}
-    """
     risks = pd.read_csv(risk_scores_csv)
     pop   = pd.read_csv(population_band_sex_csv)
     y0, y1 = int(project_span[0]), int(project_span[1])
 
-    # Select risk per sex×age_band
     def pick_risk(sub: pd.DataFrame) -> float:
         if risk_rule == "2023_only":
             s = sub[sub["year"] == 2023]["risk_per_person"]
@@ -608,24 +549,20 @@ def project_redo_savr_targets(risk_scores_csv: Path,
         if risk_rule == "2024_only":
             s = sub[sub["year"] == 2024]["risk_per_person"]
             return 0.0 if s.empty else float(s.mean())
-        # default avg of both years when present
         return float(sub["risk_per_person"].mean())
 
-    # Build mapping (sex,band) -> picked risk
     risks_rs = risks[risks["proc"] == "redo_savr"]
     key_to_risk: Dict[tuple[str,str], float] = {}
     for (sex, band), grp in risks_rs.groupby(["sex","age_band"]):
         key_to_risk[(str(sex), str(band))] = pick_risk(grp)
 
-    # For each year, sum population × risk across sex×bands ≥50 — note: ≥80 mapping needed
     def pop_for(year: int, sex: str, band: str) -> int:
-        if band.strip() == "≥80" or band.strip().lower() in (">=80", "80+"):
+        if band.strip() in ("≥80", ">=80", "80+"):
             p80_84 = int(pop[(pop.sex==sex)&(pop.age_band=="80-84")&(pop.year==year)]["population"].sum())
             pge85  = int(pop[(pop.sex==sex)&(pop.age_band=="≥85")&(pop.year==year)]["population"].sum())
             return p80_84 + pge85
         return int(pop[(pop.sex==sex)&(pop.age_band==band)&(pop.year==year)]["population"].sum())
 
-    # Determine all bands present in risk table (usually 50-54..≥80)
     bands = sorted(risks_rs["age_band"].astype(str).unique(),
                    key=lambda s: parse_age_band(s, open_width=20)[0])
 
@@ -643,6 +580,119 @@ def project_redo_savr_targets(risk_scores_csv: Path,
     p_out = population_band_sex_csv.parent / "redo_savr_targets.csv"
     out.to_csv(p_out, index=False)
     return p_out
+
+# =============================================================================
+# ------------------------ Demography & Risk plotting (NEW) --------------------
+# =============================================================================
+
+def _plot_demography(by_band_sex_csv: Path, by_age_sex_csv: Path, out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    band_df = pd.read_csv(by_band_sex_csv)
+    age_df  = pd.read_csv(by_age_sex_csv)
+
+    bands_order = ["50-54","55-59","60-64","65-69","70-74","75-79","80-84","≥85"]
+    for sex in ["Men","Women"]:
+        sub = band_df[band_df["sex"]==sex]
+        plt.figure(figsize=(10,6))
+        for b in bands_order:
+            grp = (sub[sub["age_band"]==b].sort_values("year"))
+            if grp.empty: 
+                continue
+            plt.plot(grp["year"], grp["population"], marker="o", label=b)
+        plt.title(f"Projected population by age band ({sex})")
+        plt.xlabel("Year"); plt.ylabel("Population (heads)")
+        plt.legend(ncol=2, fontsize=9)
+        plt.tight_layout()
+        _savefig_current(out_dir / f"age_projection_lines_{sex}.png")
+
+    allsex = (age_df.groupby(["year","age"])["population"].sum().reset_index())
+    years = sorted(allsex["year"].unique())
+    ages  = sorted(allsex["age"].unique())
+    grid = np.zeros((len(years), len(ages)), dtype=float)
+    for i, y in enumerate(years):
+        row = allsex[allsex["year"]==y].set_index("age")["population"]
+        for j, a in enumerate(ages):
+            grid[i, j] = float(row.get(a, 0.0))
+    fig, ax = plt.subplots(figsize=(11, 4.5), dpi=140)
+    im = ax.imshow(grid, aspect="auto", origin="lower")
+    ax.set_yticks(range(len(years))); ax.set_yticklabels(years)
+    step = max(1, len(ages)//16)
+    ax.set_xticks(list(range(0,len(ages),step))); ax.set_xticklabels([ages[i] for i in range(0,len(ages),step)])
+    ax.set_xlabel("Age"); ax.set_ylabel("Year")
+    ax.set_title("Projected population heatmap (Men + Women)")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Population (heads)")
+    fig.tight_layout()
+    fig.savefig(out_dir / "age_heatmap_allsex.png", facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close(fig)
+
+
+def _plot_risk_scores(risk_scores_csv: Path, out_dir: Path, risk_rule: str) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    df = pd.read_csv(risk_scores_csv)
+    procs = ["tavi","savr","redo_savr"]
+    bands_order = ["50-54","55-59","60-64","65-69","70-74","75-79","80-84","≥80"]
+
+    def _heatmap(pivot, title, savepath):
+        fig, ax = plt.subplots(figsize=(10, 3.6), dpi=140)
+        im = ax.imshow(pivot.to_numpy(), aspect="auto", origin="lower")
+        ax.set_yticks(range(len(pivot.index))); ax.set_yticklabels(list(pivot.index))
+        ax.set_xticks(range(len(pivot.columns))); ax.set_xticklabels(list(pivot.columns), rotation=45, ha="right")
+        ax.set_title(title); ax.set_xlabel("Age band"); ax.set_ylabel("Sex")
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Risk (per person)")
+        fig.tight_layout()
+        fig.savefig(savepath, facecolor=fig.get_facecolor(), edgecolor="none")
+        plt.close(fig)
+
+    def pick_rule(sub):
+        if risk_rule == "2023_only":
+            s = sub[sub["year"]==2023]["risk_per_person"]
+            return 0.0 if s.empty else float(s.mean())
+        if risk_rule == "2024_only":
+            s = sub[sub["year"]==2024]["risk_per_person"]
+            return 0.0 if s.empty else float(s.mean())
+        return float(sub["risk_per_person"].mean())
+
+    for proc in procs:
+        d = df[df["proc"]==proc].copy()
+        if d.empty:
+            continue
+        for yr in [2023, 2024]:
+            sub = d[d["year"]==yr].copy()
+            if sub.empty:
+                continue
+            pivot = (sub.pivot_table(index="sex", columns="age_band", values="risk_per_person", aggfunc="mean")
+                          .reindex(index=["Men","Women"]))
+            pivot = pivot.reindex(columns=[b for b in bands_order if b in pivot.columns])
+            _heatmap(pivot, f"{proc.upper()} risk — {yr}", out_dir / f"{proc}_heatmap_{yr}.png")
+
+        p23 = (d[d["year"]==2023].pivot_table(index="sex", columns="age_band", values="risk_per_person", aggfunc="mean"))
+        p24 = (d[d["year"]==2024].pivot_table(index="sex", columns="age_band", values="risk_per_person", aggfunc="mean"))
+        if not p23.empty and not p24.empty:
+            delta = (p24 - p23).reindex(index=["Men","Women"], columns=[b for b in bands_order if b in p23.columns or b in p24.columns])
+            _heatmap(delta.fillna(0.0), f"{proc.upper()} risk — Δ(2024−2023)", out_dir / f"{proc}_heatmap_delta_2024_vs_2023.png")
+
+        rows = []
+        for sex in ["Men","Women"]:
+            for band in bands_order:
+                sub = d[(d["sex"]==sex) & (d["age_band"]==band)]
+                if sub.empty:
+                    continue
+                rows.append([sex, band, pick_rule(sub)])
+        bars = pd.DataFrame(rows, columns=["sex","age_band","risk"]).pivot(index="age_band", columns="sex", values="risk")
+        bars = bars.reindex(index=[b for b in bands_order if b in bars.index])
+        if not bars.empty:
+            fig, ax = plt.subplots(figsize=(10, 4), dpi=140)
+            x = np.arange(len(bars.index))
+            w = 0.35
+            ax.bar(x - w/2, bars["Men"].fillna(0.0), width=w, label="Men")
+            ax.bar(x + w/2, bars["Women"].fillna(0.0), width=w, label="Women")
+            ax.set_xticks(x); ax.set_xticklabels(bars.index, rotation=45, ha="right")
+            ax.set_title(f"{proc.upper()} risk by age-band (rule={risk_rule})")
+            ax.set_xlabel("Age band"); ax.set_ylabel("Risk (per person)")
+            ax.legend()
+            fig.tight_layout()
+            fig.savefig(out_dir / f"{proc}_bar_avg_risks.png", facecolor=fig.get_facecolor(), edgecolor="none")
+            plt.close(fig)
 
 # =============================================================================
 # --------------------------- Engine (v7 core) ---------------------------------
@@ -760,7 +810,6 @@ def _project_index_by_pop_rate(obs_df: pd.DataFrame,
                 }))
     return pd.concat(out_rows, ignore_index=True)
 
-# ---- v5‑style linear/constant helpers + redistribution (kept for completeness)
 def _linear_or_constant(obs_df: pd.DataFrame,
                         end_year: int,
                         window: int,
@@ -871,7 +920,7 @@ def _read_redo_savr_csv_to_year_totals(path: Path) -> Dict[int, int]:
     return {}
 
 # =============================================================================
-# Monte‑Carlo simulator (unchanged from v7)
+# Monte‑Carlo simulator (unchanged vs v7)
 # =============================================================================
 
 class DistFactory:
@@ -905,18 +954,15 @@ class ViVSimulator:
         self.n_cat           = cfg.risk_model["categories"]
         self.min_dur         = float(cfg.simulation.get("min_dur_years", 1.0))
 
-        # --- load observed
         tavi_obs = pd.read_csv(cfg.procedure_counts["tavi"])
         savr_obs = pd.read_csv(cfg.procedure_counts["savr"])
 
-        # snapshot inputs (best effort)
         try:
             shutil.copy2(cfg.procedure_counts["tavi"], dirs.inputs_snapshot / "registry_tavi.csv")
             shutil.copy2(cfg.procedure_counts["savr"], dirs.inputs_snapshot / "registry_savr.csv")
         except Exception:
             pass
 
-        # population (optional)
         pop_df = None
         pop_cfg = cfg.population_projection
         if pop_cfg and Path(str(pop_cfg.get("path",""))).exists():
@@ -926,10 +972,8 @@ class ViVSimulator:
             self.pop_cols = ("year","age","population")
             log.warning("Population projection not found; population-based features limited.")
 
-        # projection per procedure
         ip = cfg.index_projection
         assert ip is not None
-        # TAVI
         if ip.tavi and ip.tavi.method == "population_rate" and pop_df is not None:
             self.tavi_df = _project_index_by_pop_rate(
                 tavi_obs, self.end_year, pop_df, self.open_width, *self.pop_cols,
@@ -944,7 +988,6 @@ class ViVSimulator:
                 self.tavi_df = redistribute_future_by_population(
                     self.tavi_df, pop_df, self.open_width, *self.pop_cols
                 )
-        # SAVR
         if ip.savr and ip.savr.method == "population_rate" and pop_df is not None:
             self.savr_df = _project_index_by_pop_rate(
                 savr_obs, self.end_year, pop_df, self.open_width, *self.pop_cols,
@@ -963,21 +1006,17 @@ class ViVSimulator:
                     self.savr_df, pop_df, self.open_width, *self.pop_cols
                 )
 
-        # save full index tables (observed+projection)
         self.tavi_df.to_csv(dirs.tables_index / "tavi_with_projection.csv", index=False)
         self.savr_df.to_csv(dirs.tables_index / "savr_with_projection.csv", index=False)
 
         log.info("TAVI rows %d, SAVR rows %d (obs+projection)", len(self.tavi_df), len(self.savr_df))
 
-        # dists
         dur = cfg.durability
-        # Two possible shapes depending on YAML nesting
         if "savr_bioprosthetic" in dur:
             self.dur_tavi       = DistFactory(dur["tavi"])
             self.dur_savr_lt70  = DistFactory(dur["savr_bioprosthetic"]["lt70"])
             self.dur_savr_gte70 = DistFactory(dur["savr_bioprosthetic"]["gte70"])
         else:
-            # If user supplied flat dicts
             self.dur_tavi       = DistFactory(dur["tavi"])
             self.dur_savr_lt70  = DistFactory(dur["savr_lt70"])
             self.dur_savr_gte70 = DistFactory(dur["savr_gte70"])
@@ -991,17 +1030,9 @@ class ViVSimulator:
             self.surv_int  = norm(loc=s["intermediate"]["median"], scale=s["intermediate"]["sd"])
             self.surv_high = norm(loc=s["high"]["median"], scale=s["high"]["sd"])
 
-        # redo targets + mode
         self.redo_targets = self._load_redo_savr_numbers()
 
     def _load_redo_savr_numbers(self) -> Dict[int, int]:
-        """
-        Load absolute redo-SAVR targets.
-        Priority:
-          1) redo_savr_numbers.{values|path}
-          2) procedure_counts.redo_savr
-        mode: 'replace_rates' (default) or 'haircut'
-        """
         self.redo_mode = "replace_rates"
         self.rr_savr_cfg = float(self.cfg.redo_rates.get("savr_after_savr", 0.0))
         self.rr_tavi_cfg = float(self.cfg.redo_rates.get("savr_after_tavi", 0.0))
@@ -1030,20 +1061,16 @@ class ViVSimulator:
                 except Exception:
                     pass
                 
-        # Decide whether to use per-event redo rates during MC
         self.use_redo_rates = not (out and self.redo_mode == "replace_rates")
         if out and not self.use_redo_rates:
             if (self.rr_savr_cfg > 0) or (self.rr_tavi_cfg > 0):
-                log.info("Absolute redo targets present (mode=replace_rates); "
-                         "ignoring redo_rates during simulation.")
+                log.info("Absolute redo targets present (mode=replace_rates); ignoring redo_rates during simulation.")
 
-        # ---- fill_missing policy ----
         rs_fm = (self.cfg.redo_savr_numbers or {}).get("fill_missing", {}) if isinstance(self.cfg.redo_savr_numbers, dict) else {}
         method = str(rs_fm.get("method", "zero")).lower()
         y_lo   = int(self.cfg.years["simulate_from"])
         y_hi   = int(self.cfg.years["end"])
         yrange = rs_fm.get("range", [y_lo, y_hi])
-
         try:
             y_lo, y_hi = int(yrange[0]), int(yrange[1])
         except Exception:
@@ -1065,7 +1092,7 @@ class ViVSimulator:
                         last = 0
                     filled[y] = last
                 out = filled
-            else:  # linear
+            else:
                 xs = [k for k, _ in anchors]; ys = [v for _, v in anchors]
                 arr = np.interp(years, xs, ys, left=ys[0], right=ys[-1])
                 out = {y: int(round(v)) for y, v in zip(years, arr)}
@@ -1149,7 +1176,6 @@ class ViVSimulator:
                 dur = (DistFactory(self.cfg.durability["tavi"]).sample(n, self.rng) if proc_type=="tavi"
                        else np.where(ages < 70, DistFactory(self.cfg.durability["savr_bioprosthetic"]["lt70"]).sample(n, self.rng),
                                      DistFactory(self.cfg.durability["savr_bioprosthetic"]["gte70"]).sample(n, self.rng)))
-                # clamp & discretize to calendar years
                 dur = np.maximum(dur, float(self.cfg.simulation.get("min_dur_years", 1.0)))
                 fail_y  = year + np.floor(dur).astype(int)
                 death_y = year + np.floor(surv).astype(int)
@@ -1170,7 +1196,6 @@ class ViVSimulator:
                     ai = int(np.digitize(age, edges, right=False))
                     candidates.append((int(fy), vtype, rk, labels[ai]))
 
-                    # redo first (if enabled), then ViV via penetration
                     redo_p = rr_tavi if vtype == "tavi_in_tavi" else rr_savr
                     if np.random.default_rng(self.rng).random() < redo_p:
                         redo_log.append((int(fy), vtype))
@@ -1295,16 +1320,12 @@ def _plot_viv_pretty_with_overlay(pre_summary: pd.DataFrame,
     fig, ax = plt.subplots(figsize=(10,5), dpi=140)
     bar_color_final = bar_color or "#d0d0d0"
 
-    # Bars = POST total
     bars = ax.bar(post.index, post["total"], label="Total ViV (post)", color=bar_color_final, alpha=0.5, zorder=1)
-
-    # Solid lines = POST
     l1, = ax.plot(post.index, post["tavi_in_savr"], marker="o", label="TAVR-in-SAVR (post)",
                   color="red", alpha=0.9, linewidth=2, zorder=3)
     l2, = ax.plot(post.index, post["tavi_in_tavi"], marker="s", label="TAVR-in-TAVR (post)",
                   color="blue", alpha=0.9, linewidth=2, zorder=3)
 
-    # Dashed lines = PRE
     ax.plot(pre.index, pre["tavi_in_savr"], linestyle="--", marker=None, color="red", alpha=0.7, label="... pre (SAVR)")
     ax.plot(pre.index, pre["tavi_in_tavi"], linestyle="--", marker=None, color="blue", alpha=0.7, label="... pre (TAVR)")
 
@@ -1362,7 +1383,7 @@ def _save_viv_qc_plots(detail: pd.DataFrame, summary: pd.DataFrame,
     ax.xaxis.set_major_locator(mtick.MultipleLocator(5))
     ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%d'))
     if max_val > 0:
-        ax.set_ylim(top=max_val * 1.12)  # headroom for labels
+        ax.set_ylim(top=max_val * 1.12)
     fig.tight_layout(); ax.legend()
     fig.savefig(out_dir / "viv_forecast.png", facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)
@@ -1374,7 +1395,6 @@ def _save_viv_qc_plots(detail: pd.DataFrame, summary: pd.DataFrame,
 def run_simulation(cfg: Config, dirs: Dirs):
     sim = ViVSimulator(cfg, dirs)
 
-    # Figures - Index series
     tavi_last_obs = int(sim.tavi_df[sim.tavi_df["src"]=="observed"]["year"].max()) if not sim.tavi_df.empty else None
     savr_last_obs = int(sim.savr_df[sim.savr_df["src"]=="observed"]["year"].max()) if not sim.savr_df.empty else None
     _plot_index_series(sim.tavi_df, "TAVI index (observed + projection)",
@@ -1382,7 +1402,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
     _plot_index_series(sim.savr_df, "SAVR index (observed + projection)",
                        dirs.fig_index / "image_B_savr_index.png", savr_last_obs)
 
-    # Optional overlay (handy QC)
     tot_tavi = sim.tavi_df.groupby("year")["count"].sum()
     tot_savr = sim.savr_df.groupby("year")["count"].sum()
     plt.figure()
@@ -1393,7 +1412,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
     plt.tight_layout(); plt.legend()
     _savefig_current(dirs.fig_index / "index_volume_overlay.png")
 
-    # Monte Carlo
     cand_runs, real_runs, flow_runs = [], [], []
     for i in range(cfg.simulation["n_runs"]):
         cand, real, flow = sim.run_once(i)
@@ -1412,7 +1430,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
 
     cand_v5like = (cand_all.groupby(["year","viv_type"]).agg(mean=("count","mean"), sd=("count","std")).reset_index())
 
-    # Save tables
     dirs.tables_viv_per_run.mkdir(parents=True, exist_ok=True)
     cand_per_run.to_csv(dirs.tables_viv_per_run / "candidates_per_run.csv", index=False)
     real_per_run.to_csv(dirs.tables_viv_per_run / "realized_per_run.csv", index=False)
@@ -1420,14 +1437,12 @@ def run_simulation(cfg: Config, dirs: Dirs):
     cand_v5like.to_csv(dirs.tables_viv / "viv_candidates_v5like.csv", index=False)
     real_summary.to_csv(dirs.tables_viv / "viv_forecast.csv", index=False)
 
-    # Flow (mean across runs)
     flow_mean = (flow_all.groupby(["year","proc"]).mean(numeric_only=True).reset_index())
     flow_mean.to_csv(dirs.tables_flow / "patient_flow_mean.csv", index=False)
 
     _plot_flow(flow_mean, "savr", dirs.fig_flow / "flow_savr.png")
     _plot_flow(flow_mean, "tavi", dirs.fig_flow / "flow_tavi.png")
 
-    # ---------- Redo reconciliation (applies to TAVR-in-SAVR only) ----------
     redo_targets = sim.redo_targets
     if redo_targets:
         realized_adj = real_summary.copy()
@@ -1443,7 +1458,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
                 qc_rows.append([int(y), int(round(m)), None, int(round(adj))])
                 adj_vals.append((y, adj))
                 continue
-            adj = max(0.0, m - float(target))  # subtract mode; floored at 0
+            adj = max(0.0, m - float(target))
             qc_rows.append([int(y), int(round(m)), int(target), int(round(adj))])
             adj_vals.append((y, adj))
         adj_map = dict(adj_vals)
@@ -1457,7 +1472,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
         realized_adj.to_csv(dirs.tables_viv / "viv_forecast_realized.csv", index=False)
         log.info("No redo-SAVR absolute targets; 'viv_forecast_realized.csv' mirrors realized means.")
 
-    # ---------- v5-style line charts ----------
     lines_dir_cand = dirs.fig_viv / "lines_candidates"
     lines_dir_pre  = dirs.fig_viv / "lines_pre"
     lines_dir_post = dirs.fig_viv / "lines_post"
@@ -1472,7 +1486,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
     summary_post = realized_adj[["year","viv_type","realized"]].rename(columns={"realized":"mean"})
     _save_viv_qc_plots(detail_stub, summary_post, lines_dir_post, cfg.age_bins)
 
-    # Copy each 'viv_forecast_total.csv' into tables/viv with clear names
     try:
         (dirs.tables_viv).mkdir(parents=True, exist_ok=True)
         cand_csv  = lines_dir_cand / "viv_forecast_total.csv"
@@ -1487,7 +1500,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
     except Exception as e:
         log.warning("Could not copy v5-style totals CSVs to tables: %s", e)
 
-    # Image C — choose source: post | pre | both
     ylo, yhi = 2023, 2035
     if cfg.figure_ranges and cfg.figure_ranges.get("viv_years"):
         ylo, yhi = cfg.figure_ranges["viv_years"][0], cfg.figure_ranges["viv_years"][1]
@@ -1505,7 +1517,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
                                       ylo, yhi,
                                       dirs.fig_viv / f"image_C_viv_pretty_PREvsPOST_{ylo}_{yhi}.png",
                                       bar_color=bar_col, label_bars=labels_on_bars)
-    else:  # post (default)
+    else:
         _plot_viv_pretty(
             realized_adj[["year","viv_type","realized"]].rename(columns={"realized":"mean"}),
             ylo, yhi,
@@ -1513,7 +1525,6 @@ def run_simulation(cfg: Config, dirs: Dirs):
             bar_color=bar_col, label_bars=labels_on_bars
         )
 
-    # Index projection QC slices
     a, b = (cfg.figure_ranges.get("index_projection_years") if (cfg.figure_ranges and cfg.figure_ranges.get("index_projection_years")) else (2025, 2035))
     def _write_projection_slice(df, name):
         s = df.groupby(["year","src"])["count"].sum().unstack(fill_value=0).sort_index()
@@ -1547,17 +1558,14 @@ def main():
     raw_cfg_text = Path(args.config).read_text(encoding="utf-8")
     cfg = Config.parse_obj(yaml.safe_load(raw_cfg_text))
 
-    # Output root under runs/<experiment>/<timestamp>
     ts = dt.now().strftime("%Y-%m-%d-%H%M%S")
     tag = f"_{cfg.scenario_tag}" if cfg.scenario_tag else ""
     out_root = Path("runs") / cfg.experiment_name / f"{ts}{tag}"
     dirs = Dirs(out_root); dirs.make_all()
 
-    # logging + theme
     setup_logging(args.log_level, dirs.logs)
     _apply_plot_theme(cfg.plotting)
 
-    # meta: save config copies
     (dirs.meta / "config_raw.yaml").write_text(raw_cfg_text, encoding="utf-8")
     effective_cfg = cfg.model_dump(mode="json")
     (dirs.meta / "config_effective.yaml").write_text(
@@ -1567,7 +1575,6 @@ def main():
 
     log.info("Outputs will be stored under %s", out_root)
 
-    # ---------------- PRE‑COMPUTE (v9) ----------------
     if cfg.precompute and cfg.precompute.enabled:
         log.info("Pre‑compute: building age/sex population, risk scores, and redo targets.")
         pop_path = Path(cfg.precompute.population_source["path"])
@@ -1576,7 +1583,6 @@ def main():
                        else out_root.parent.parent / cfg.precompute.derived_dir)
         derived_dir.mkdir(parents=True, exist_ok=True)
 
-        # Stage 2: Age projections
         p_band_sex, p_age_sex, p_age_all = build_age_and_sex_population(
             pop_csv=pop_path,
             out_dir=derived_dir,
@@ -1587,21 +1593,18 @@ def main():
             sex_ratio_50_64=float(cfg.precompute.sex_ratio_50_64),
             open_width=int(cfg.precompute.open_age_bin_width),
         )
-        # Snapshot derived inputs
         try:
             shutil.copy2(p_age_all, dirs.inputs_snapshot / p_age_all.name)
             shutil.copy2(p_band_sex, dirs.inputs_snapshot / p_band_sex.name)
         except Exception:
             pass
 
-        # Stage 3: Risk scores from 2023/2024
         risks_csv = compute_risk_scores(cfg.procedure_counts, p_band_sex, cfg.precompute.risk_years)
         try:
             shutil.copy2(risks_csv, dirs.inputs_snapshot / Path(risks_csv).name)
         except Exception:
             pass
 
-        # Stage 5: redo‑SAVR absolute targets (optional)
         if cfg.precompute.build_redo_savr_targets:
             redo_csv = project_redo_savr_targets(
                 risk_scores_csv=risks_csv,
@@ -1614,13 +1617,11 @@ def main():
             except Exception:
                 pass
 
-        # Wire derived population file into cfg on the fly (engine expects ALL‑sex single‑year)
         if cfg.population_projection is None:
             cfg.population_projection = {
                 "path": str(p_age_all),
                 "year_col": "year", "age_col": "age", "pop_col": "population"
             }
-        # Wire redo targets if not set in YAML
         if (cfg.redo_savr_numbers is None) and cfg.precompute.build_redo_savr_targets:
             cfg.redo_savr_numbers = {
                 "path": str(derived_dir / "redo_savr_targets.csv"),
@@ -1628,14 +1629,21 @@ def main():
                 "fill_missing": { "method": "linear", "range": cfg.precompute.project_years }
             }
 
+        # ---- New: Demography and Risk figures ----
+        try:
+            demog_dir = dirs.figures / "demography"
+            risks_dir = dirs.figures / "risks"
+            _plot_demography(p_band_sex, p_age_sex, demog_dir)
+            _plot_risk_scores(risks_csv, risks_dir, str(cfg.precompute.risk_rule))
+        except Exception as e:
+            log.warning("Could not create demography/risk plots: %s", e)
+
     if args.precompute_only:
         log.info("Pre‑compute complete. Exiting due to --precompute-only.")
         return
 
-    # ---------------- ENGINE (same as v7) ----------------
     cand, real, flow = run_simulation(cfg, dirs)
 
-    # summary
     log.info("Tables:")
     log.info("  %s", dirs.tables_index / "tavi_with_projection.csv")
     log.info("  %s", dirs.tables_index / "savr_with_projection.csv")

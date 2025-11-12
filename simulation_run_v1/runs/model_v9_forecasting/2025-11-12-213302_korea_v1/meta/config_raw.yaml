@@ -1,0 +1,144 @@
+# -----------------------------------------------------------------------------
+# model_v9_configs.yaml — Korea demography-anchored ViV forecast (2025–2035)
+# Run:
+#   cd simulation_run_v1
+#   python models/model_v9.py --config configs/model_v9_configs.yaml --log-level DEBUG
+# -----------------------------------------------------------------------------
+
+experiment_name: model_v9_forecasting
+scenario_tag: korea_v1
+
+# Years for simulation (failures emerging in this window are counted)
+years:
+  simulate_from: 2025
+  end: 2035
+
+# Observed registry counts (long format): sex,age_band,year,count
+# Replace these 3 CSV paths with your actual files.
+procedure_counts:
+  tavi: data/registry_tavi.csv
+  savr: data/registry_savr.csv
+  redo_savr: data/registry_redo_savr.csv # optional; only used if redo_savr_numbers not provided
+
+# ————————————————————————————————————————————————————————————————————————
+# v9 PRECOMPUTE: build age/sex population (2025–2035), risk scores (2023/2024),
+# and redo‑SAVR targets (absolute). Outputs go under derived/ by default.
+# ————————————————————————————————————————————————————————————————————————
+precompute:
+  enabled: true
+  population_source:
+    path: data/korea_population_combined.csv
+    units_multiplier: 10000
+  risk_years: [2023, 2024]
+  risk_rule: avg_2023_2024          # 2024_only | 2023_only | avg_2023_2024
+  project_years: [2025, 2035]
+  split_75_84: [0.5, 0.5]           # (75–79, 80–84)
+  split_50_64: [0.333333, 0.333333, 0.333334]  # (50–54, 55–59, 60–64)
+  sex_ratio_50_64: 100              # Men per 100 Women (assumption)
+  open_age_bin_width: 20            # makes ≥85 → ages 85..104 for single‑year expansion
+  derived_dir: derived               # where derived CSVs will be written
+  build_redo_savr_targets: true      # project absolute redo-SAVR yearly totals
+
+# ————————————————————————————————————————————————————————————————————————
+# Index projection: use population-rate mode (rates learned from 2023–2024)
+# ————————————————————————————————————————————————————————————————————————
+index_projection:
+  tavi:
+    method: population_rate
+    pop_rate:
+      obs_years: "2023-2024"
+      min_age: 50
+  savr:
+    method: population_rate
+    pop_rate:
+      obs_years: "2023-2024"
+      min_age: 50
+
+# The population file will be injected automatically by the precompute step:
+# population_projection:
+#   path: derived/age_projections_by_year_age_allsex.csv
+#   year_col: year
+#   age_col: age
+#   pop_col: population
+
+# Redo-SAVR absolute targets will also be injected during precompute unless
+# you prefer to specify them manually here:
+# redo_savr_numbers:
+#   path: derived/redo_savr_targets.csv
+#   mode: replace_rates
+#   fill_missing: { method: linear, range: [2025, 2035] }
+
+# Monte-Carlo and model details (consistent with Genereux/Ohno assumptions)
+open_age_bin_width: 20    # used when parsing open bands like ≥80
+age_bins: [60, 65, 70, 75, 80, 85, 90, 95]   # labeling bins for outputs
+
+durability:
+  tavi:
+    early: { mean: 4.0, sd: 1.5, weight: 0.2 }
+    late:  { mean: 11.5, sd: 3.5, weight: 0.8 }
+  savr_bioprosthetic:
+    lt70:  { mean: 10.0, sd: 5.0, weight: 1.0 }
+    gte70: { mean: 17.0, sd: 5.0, weight: 1.0 }
+
+
+survival_curves:
+  low_risk:       { median: 11.0, sd: 3.0 }   # can be tuned; engine can apply age hazard below
+  int_high_risk:  { median: 6.0,  sd: 2.0 }
+
+risk_model:
+  categories: 2
+  use_age_hazard: true
+
+age_hazard:
+  ref_age: 75
+  hr_per5:
+    low: 0.90
+    intermediate: 0.95
+
+# Risk mix (share of low vs intermediate+high) by year ranges
+risk_mix:
+  tavi:
+    "2014-2018": { low: 0.0,  ih: 1.0 }
+    "2019-2024": { low: 0.33, ih: 0.67 }
+    "2025-2035": { low: 0.50, ih: 0.50 }
+  savr: { low: 0.85, ih: 0.15 }
+
+# ViV penetration ramps (fraction of eligible failures that receive ViV)
+penetration:
+  tavi_in_tavi: { "2022": 0.10, "2035": 0.60 }
+  tavi_in_savr: { "2022": 0.60, "2035": 0.80 }
+
+# Redo rates (used only if redo_savr_numbers absent or mode≠replace_rates)
+redo_rates:
+  savr_after_savr: 0.00
+  savr_after_tavi: 0.00
+
+simulation:
+  n_runs: 20
+  rng_seed: 2025
+  min_dur_years: 1.0
+
+# cosmetic / outputs
+plotting:
+  background: light
+  image_c_source: post          # pre | post | both
+  viv_total_bar_color: null
+  label_bars: true
+
+figure_ranges:
+  viv_years: [2025, 2035]
+  index_projection_years: [2025, 2035]
+
+# legacy key kept for compatibility (not used)
+outputs: { root: runs }
+
+
+precompute:
+  enabled: true
+  population_source:
+    path: data/korea_population_combined.csv
+  risk_years: [2023, 2024]
+  risk_rule: avg_2023_2024   # or 2024_only, 2023_only
+  split_50_64: [0.3334, 0.3333, 0.3333]
+  split_75_84: [0.5, 0.5]
+  make_plots: true
