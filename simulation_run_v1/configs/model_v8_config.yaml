@@ -4,7 +4,7 @@ korea_demo:
 
   population_input:
     mode: "combined"
-    combined_csv: "data/korea_population_combined.csv"  # see docstring for expected schema
+    combined_csv: "/Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/data/korea_population_combined.csv"  # see docstring for expected schema
 
   learning_windows:
     tavi: [2015, 2021]
