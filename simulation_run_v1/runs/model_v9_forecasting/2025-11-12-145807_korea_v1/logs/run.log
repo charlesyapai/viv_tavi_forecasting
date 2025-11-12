@@ -1,0 +1,22 @@
+14:58:07 | INFO     | Outputs will be stored under runs/model_v9_forecasting/2025-11-12-145807_korea_v1
+14:58:07 | INFO     | Pre‑compute: building age/sex population, risk scores, and redo targets.
+14:58:07 | INFO     | TAVI rows 281, SAVR rows 470 (obs+projection)
+14:58:16 | INFO     | Tables:
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/index/tavi_with_projection.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/index/savr_with_projection.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/flow/patient_flow_mean.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/viv/viv_candidates_totals.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/viv/viv_candidates_v5like.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/viv/viv_forecast.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/tables/viv/viv_forecast_realized.csv
+14:58:16 | INFO     | QC:
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/qc/index_projection/tavi_index_projection_*.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/qc/index_projection/savr_index_projection_*.csv
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/qc/redo/redo_savr_qc.csv
+14:58:16 | INFO     | Figures:
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/figures/index/image_A_tavi_index.png
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/figures/index/image_B_savr_index.png
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/figures/index/index_volume_overlay.png
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/figures/flow/flow_tavi.png
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/figures/flow/flow_savr.png
+14:58:16 | INFO     |   runs/model_v9_forecasting/2025-11-12-145807_korea_v1/figures/viv/image_C_viv_pretty_*.png
