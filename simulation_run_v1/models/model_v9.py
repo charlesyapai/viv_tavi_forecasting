@@ -1,42 +1,42 @@
 #!/usr/bin/env python3
 """
-model_v9.py — Demography‑anchored ViV‑TAVI Monte Carlo forecaster
+model_v9.py — Demography-anchored ViV-TAVI Monte Carlo forecaster
 -----------------------------------------------------------------
 
 This version keeps the model_v7 execution style (CLI, folder structure, CSV + PNG
 outputs) but adds:
 
-1. Demography pre‑compute (optional, via cfg.precompute):
+1. Demography pre-compute (optional, via cfg.precompute):
    • Reads simulation_run_v1/data/korea_population_combined.csv
      (age buckets in 10,000 people + sex ratios).
    • Builds annual population projections by:
-       - Year × Sex × Age‑band (e.g. 50‑54, 55‑59, ... , ≥85)
-       - Year × Sex × single‑year age
-       - Year × single‑year age (Men+Women)
+       - Year × Sex × Age-band (e.g. 50-54, 55-59, ... , ≥85)
+       - Year × Sex × single-year age
+       - Year × single-year age (Men+Women)
    • Writes these to a DERIVED directory (configurable).
 
-2. Baseline per‑capita risk scores (TAVI, SAVR, redo‑SAVR):
+2. Baseline per-capita risk scores (TAVI, SAVR, redo-SAVR):
    • Uses observed index data (sex × age_band × year × count) for
      cfg.precompute.risk_years (default [2023, 2024]).
    • Divides observed counts by population in the same sex × age_band
-     to get per‑person risk.
+     to get per-person risk.
    • Writes baseline_risk_scores_by_sex.csv and plots:
        - Heatmaps for each year
        - Δ heatmap (latest − earliest)
-       - Bar charts of average risk by age‑band & sex.
+       - Bar charts of average risk by age-band & sex.
 
-3. Redo‑SAVR target projection (optional):
-   • Takes redo‑SAVR per‑capita risks and populations to project absolute
-     yearly redo‑SAVR counts (e.g. 2025–2035 or 2025–2050).
+3. Redo-SAVR target projection (optional):
+   • Takes redo-SAVR per-capita risks and populations to project absolute
+     yearly redo-SAVR counts (e.g. 2025–2035 or 2025–2050).
    • Feeds into simulation as absolute targets:
-       - Mode "replace_rates": disables per‑event redo_rates and subtracts
-         these absolute counts from TAVR‑in‑SAVR in the post‑processing step.
+       - Mode "replace_rates": disables per-event redo_rates and subtracts
+         these absolute counts from TAVR-in-SAVR in the post-processing step.
 
 4. Index volume projection:
    • If cfg.index_projection.*.method == "population_rate" and a population
      projection is available (via cfg.population_projection), TAVI/SAVR index
      volumes are projected by:
-       - Estimating per‑age rates from selected observed years.
+       - Estimating per-age rates from selected observed years.
        - Applying those rates to future age distributions.
    • Otherwise falls back to v7 style linear/constant extrapolation, optionally
      redistributed by age using population shares.
@@ -48,14 +48,14 @@ outputs) but adds:
        viv_years: [2025, 2035]    # Image C range
        index_projection_years: [2025, 2035]
        waterfall_years: [2030, 2035] (optional)
-   • A helper _apply_xrange_and_focus(...) applies x‑limits and draws a
+   • A helper _apply_xrange_and_focus(...) applies x-limits and draws a
      translucent band for focus_band.
 
 6. Simulation jitter & verbosity:
    • cfg.simulation.jitter:
        durability_pct_sd:  float (e.g. 5.0 = ±5% SD on durability)
        survival_pct_sd:    float
-       penetration_pct_sd: float (run‑to‑run multiplier on penetration)
+       penetration_pct_sd: float (run-to-run multiplier on penetration)
    • cfg.simulation.verbose: true/false
    • cfg.simulation.progress_every: int (e.g. log progress every 10 runs)
    • For each Monte Carlo run, we log realized ViV counts if verbose.
@@ -71,8 +71,8 @@ outputs) but adds:
                    year AND the failure year is within the simulation window
                    (simulate_from ≤ fail_year ≤ end)
    • Penetration (cfg.penetration) is interpreted as the fraction of VIABLE
-     failures in a given year that receive ViV, after excluding redo‑SAVR if
-     per‑event redo_rates are active.
+     failures in a given year that receive ViV, after excluding redo-SAVR if
+     per-event redo_rates are active.
 
 Run:
     python models/model_v9.py --config configs/model_v9_configs.yaml --log-level DEBUG
@@ -179,12 +179,12 @@ class ConstantSettings(BaseModel):
 
 class PopRateSettings(BaseModel):
     """
-    Settings for population‑rate based projection:
+    Settings for population-rate based projection:
       - source: "from_observed" (estimate rates from observed registry) or
                 "from_config"  (use rates_by_age directly)
       - obs_years: which observed years to use for rate estimation; can be a single
                    year, a list, or a "YYYY-YYYY" range string.
-      - min_age: age below which per‑age rates are forced to zero.
+      - min_age: age below which per-age rates are forced to zero.
       - annual_rate_growth: optional multiplicative growth in rates per year.
       - anchors: optional {year: multiplier} to modulate base rates by year.
       - rates_by_age: {age: rate} if source == "from_config".
@@ -218,18 +218,18 @@ class IndexProjection(BaseModel):
 
 class PrecomputeConfig(BaseModel):
     """
-    Controls the demography + risk pre‑compute stage.
+    Controls the demography + risk pre-compute stage.
 
     population_source:
       path: path to korea_population_combined.csv
       units_multiplier: 10000.0 (because table is in 10,000 persons)
 
     risk_years:
-      years for which we compute baseline per‑capita risk from registry
+      years for which we compute baseline per-capita risk from registry
       (e.g. 2023 and 2024).
 
     risk_rule:
-      How to compress multi‑year redo‑SAVR risks when projecting absolute
+      How to compress multi-year redo-SAVR risks when projecting absolute
       redo targets: "2023_only" | "2024_only" | "avg_2023_2024".
 
     project_years:
@@ -237,13 +237,13 @@ class PrecomputeConfig(BaseModel):
       (inclusive): [start, end], e.g. [2025, 2050].
 
     split_75_84 & split_50_64:
-      How to split wide brackets into 5‑year bands.
+      How to split wide brackets into 5-year bands.
 
     sex_ratio_50_64:
-      Assumed men per 100 women for 50‑64 when not provided in the sheet.
+      Assumed men per 100 women for 50-64 when not provided in the sheet.
 
     open_age_bin_width:
-      Used when expanding ≥85 to [85, 85+width) for single‑year ages.
+      Used when expanding ≥85 to [85, 85+width) for single-year ages.
     """
     enabled: bool = True
     population_source: Dict[str, str | float] = {
@@ -255,7 +255,7 @@ class PrecomputeConfig(BaseModel):
     project_years: List[int] = [2025, 2050]
 
     split_75_84: List[float] = [0.5, 0.5]        # [share_75_79, share_80_84]
-    split_50_64: List[float] = [1/3, 1/3, 1/3]   # [50‑54, 55‑59, 60‑64]
+    split_50_64: List[float] = [1/3, 1/3, 1/3]   # [50-54, 55-59, 60-64]
 
     sex_ratio_50_64: float = 100.0
     open_age_bin_width: int = 20
@@ -341,7 +341,7 @@ class Config(BaseModel):
                     savr_method = str(savr_cfg.get("method", savr_method))
                     savr_from = int(savr_cfg.get("from_year", savr_from))
                     savr_value = int(savr_cfg.get("value", savr_value))
-                # top‑level "method" applies to TAVI
+                # top-level "method" applies to TAVI
                 if "method" in ve:
                     tavi_method = str(ve["method"])
             self.index_projection = IndexProjection(
@@ -354,7 +354,7 @@ class Config(BaseModel):
         return self
 
 # =============================================================================
-# Small path helper (v7‑style folder structure + extra demog/risks)
+# Small path helper (v7-style folder structure + extra demog/risks)
 # =============================================================================
 
 class Dirs:
@@ -445,7 +445,7 @@ def compute_risk_scores(proc_files: Dict[str, Path],
 
 def parse_age_band(band: str, open_width: int) -> Tuple[int, int]:
     """
-    Parse age‑band labels like '<5yr', '5‑9', '≥80', '>=85', '>80', '80+', etc.
+    Parse age-band labels like '<5yr', '5-9', '≥80', '>=85', '>80', '80+', etc.
 
     Returns (lo, hi) where hi is exclusive:
       '50-54'  -> (50, 55)
@@ -497,7 +497,7 @@ def _age_labels(edges: List[int]) -> List[str]:
 def _largest_remainder_split(total: int, shares: np.ndarray) -> np.ndarray:
     """
     Allocate 'total' integer units across buckets in proportion to 'shares' using the
-    largest‑remainder (Hamilton) method. If shares sum to 0, allocate uniformly.
+    largest-remainder (Hamilton) method. If shares sum to 0, allocate uniformly.
     """
     shares = np.clip(shares, 0, None)
     if shares.sum() == 0:
@@ -528,7 +528,7 @@ def _interp_scalar_by_year(year: int, anchors: Dict[str, float]) -> float:
     return float(np.interp(year, xs, ys))
 
 # =============================================================================
-# Demography pre‑compute
+# Demography pre-compute
 # =============================================================================
 
 def _read_population_table(path: Path) -> Tuple[pd.DataFrame, pd.DataFrame, List[int]]:
@@ -690,7 +690,7 @@ def build_age_and_sex_population(pop_csv: Path,
     return p_band_sex, p_age_sex, p_age_all
 
 # =============================================================================
-# Baseline risk & redo‑SAVR projection
+# Baseline risk & redo-SAVR projection
 # =============================================================================
 
 def build_baseline_risk_scores(
@@ -702,7 +702,7 @@ def build_baseline_risk_scores(
     out_csv: Path,
 ) -> Path:
     """
-    Compute baseline per‑capita risk for each procedure (tavi, savr, redo_savr):
+    Compute baseline per-capita risk for each procedure (tavi, savr, redo_savr):
 
       risk = observed_count(year, sex, age_band) / population(year, sex, age_band)
 
@@ -764,7 +764,7 @@ def build_baseline_risk_scores(
 
             for proc_name, g_proc in proc_y_sex.groupby("procedure"):
                 for band, g_band in g_proc.groupby("age_band"):
-                    # Map ≥80 band in registry to 80‑84 + ≥85 population
+                    # Map ≥80 band in registry to 80-84 + ≥85 population
                     if band in ("≥80", ">=80", "80+"):
                         pop_den = 0.0
                         if "80-84" in pop_by_band.index:
@@ -798,20 +798,20 @@ def project_redo_savr_targets(risk_scores_csv: Path,
                               risk_rule: str,
                               project_span: tuple[int,int]) -> Path:
     """
-    Build absolute yearly redo‑SAVR targets from per‑capita risks × population.
+    Build absolute yearly redo-SAVR targets from per-capita risks × population.
 
     If the baseline risk file is empty (no columns or no rows), we:
       • log a warning
       • write an empty redo_savr_targets.csv (no targets)
-      • fall back to cfg.redo_rates inside the Monte‑Carlo engine
+      • fall back to cfg.redo_rates inside the Monte-Carlo engine
     """
-    # --- NEW: guard against an empty or header‑only risk file ---
+    # --- NEW: guard against an empty or header-only risk file ---
     try:
         risks = pd.read_csv(risk_scores_csv)
     except pd.errors.EmptyDataError:
         log.warning(
             "Risk score file %s is completely empty (no columns). "
-            "Skipping redo‑SAVR target precompute; simulation will use redo_rates instead.",
+            "Skipping redo-SAVR target precompute; simulation will use redo_rates instead.",
             risk_scores_csv,
         )
         p_out = Path(population_band_sex_csv).parent / "redo_savr_targets.csv"
@@ -821,7 +821,7 @@ def project_redo_savr_targets(risk_scores_csv: Path,
     if risks.empty:
         log.warning(
             "Risk score file %s has headers but no rows. "
-            "Skipping redo‑SAVR target precompute; simulation will use redo_rates instead.",
+            "Skipping redo-SAVR target precompute; simulation will use redo_rates instead.",
             risk_scores_csv,
         )
         p_out = Path(population_band_sex_csv).parent / "redo_savr_targets.csv"
@@ -832,7 +832,7 @@ def project_redo_savr_targets(risk_scores_csv: Path,
     pop   = pd.read_csv(population_band_sex_csv)
     if pop.empty:
         log.warning(
-            "Population file %s is empty. Cannot build redo‑SAVR targets; "
+            "Population file %s is empty. Cannot build redo-SAVR targets; "
             "simulation will use redo_rates instead.",
             population_band_sex_csv,
         )
@@ -907,12 +907,12 @@ def project_redo_savr_targets(risk_scores_csv: Path,
 
 def _apply_xrange_and_focus(ax, cfg: Config, default: Tuple[int, int] = (2015, 2050)) -> None:
     """
-    Apply a common x‑axis range and an optional highlighted 'focus_band' for
+    Apply a common x-axis range and an optional highlighted 'focus_band' for
     key plots.
 
     cfg.figure_ranges:
       x_axis: [x_min, x_max]
-      focus_band: [from_year, to_year] -> shaded region on x‑axis
+      focus_band: [from_year, to_year] -> shaded region on x-axis
     """
     x_range = None
     focus = None
@@ -1005,59 +1005,81 @@ def _plot_waterfall_for_year(flow_mean: pd.DataFrame,
     _do_plot("TAVR-in-TAVR", "tavi", "tavi_in_tavi", 0.0)
 
 
-def _plot_demography(by_band_sex_csv: Path, by_age_sex_csv: Path, out_dir: Path,
+def _plot_demography(by_band_sex_csv: Path,
+                     by_age_sex_csv: Path,
+                     out_dir: Path,
+                     units_scale: float = 1.0,
                      cfg: Optional[Config] = None) -> None:
     """
-    Demography plots:
-      • age_projection_lines_Men/Women.png — lines by age‑band for each sex.
-      • age_heatmap_allsex.png             — Year × Age heatmap (total population).
+    Demography QC figures.
+
+    • age_projection_lines_<sex>.png
+        – One line per 5‑year age band (50–54..≥85)
+        – Y‑axis is population divided by `units_scale` (so with 10,000 you get
+          '×10,000 people')
+        – X‑axis covers 2015→end-year, with 2025–2035 shaded if configured.
+
+    • age_heatmap_allsex.png
+        – Year×Age heatmap of total population (Men+Women), same scaling.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     band_df = pd.read_csv(by_band_sex_csv)
     age_df  = pd.read_csv(by_age_sex_csv)
 
-    bands_order = ["50-54", "55-59", "60-64", "65-69",
-                   "70-74", "75-79", "80-84", "≥85"]
+    bands_order = ["50-54","55-59","60-64","65-69","70-74","75-79","80-84","≥85"]
 
-    for sex in ("Men", "Women"):
+    for sex in ["Men","Women"]:
         sub = band_df[band_df["sex"] == sex]
+        if sub.empty:
+            continue
+
         plt.figure(figsize=(10, 6), dpi=140)
         for b in bands_order:
             grp = sub[sub["age_band"] == b].sort_values("year")
             if grp.empty:
                 continue
-            plt.plot(grp["year"], grp["population"], marker="o", label=b)
+            y_vals = grp["population"].astype(float) / float(units_scale)
+            plt.plot(grp["year"], y_vals, marker="o", label=b)
+
         ax = plt.gca()
-        if cfg:
-            _apply_xrange_and_focus(ax, cfg)
-        plt.title(f"Projected population by age band — {sex}")
-        plt.xlabel("Year")
-        plt.ylabel("Population (heads)")
-        plt.legend(ncol=2, fontsize=9)
+        # Show 2015 → end-year on x-axis and shade 2025–2035 focus band if configured
+        default_hi = 2050
+        if cfg is not None:
+            try:
+                default_hi = int(cfg.years.get("end", default_hi))
+            except Exception:
+                pass
+        _apply_xrange_and_focus(ax, cfg, default=(2015, default_hi))
+
+        ax.set_title(f"Projected population by age band ({sex})")
+        ax.set_xlabel("Year")
+        ax.set_ylabel(f"Population (×{int(units_scale):,} people)")
+        ax.legend(ncol=2, fontsize=9)
         plt.tight_layout()
         _savefig_current(out_dir / f"age_projection_lines_{sex}.png")
 
-    allsex = (age_df.groupby(["year", "age"])["population"].sum()
-              .reset_index())
+    # --- Year×Age heatmap (Men + Women) ---
+    allsex = (age_df.groupby(["year", "age"])["population"].sum().reset_index())
     years = sorted(allsex["year"].unique())
     ages  = sorted(allsex["age"].unique())
     grid = np.zeros((len(years), len(ages)), dtype=float)
     for i, y in enumerate(years):
         row = allsex[allsex["year"] == y].set_index("age")["population"]
         for j, a in enumerate(ages):
-            grid[i, j] = float(row.get(a, 0.0))
+            grid[i, j] = float(row.get(a, 0.0)) / float(units_scale)
 
     fig, ax = plt.subplots(figsize=(11, 4.5), dpi=140)
     im = ax.imshow(grid, aspect="auto", origin="lower")
     ax.set_yticks(range(len(years)))
     ax.set_yticklabels(years)
     step = max(1, len(ages) // 16)
-    ax.set_xticks(range(0, len(ages), step))
+    ax.set_xticks(list(range(0, len(ages), step)))
     ax.set_xticklabels([ages[i] for i in range(0, len(ages), step)])
     ax.set_xlabel("Age")
     ax.set_ylabel("Year")
     ax.set_title("Projected population heatmap (Men + Women)")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Population (heads)")
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label(f"Population (×{int(units_scale):,} people)")
     fig.tight_layout()
     fig.savefig(out_dir / "age_heatmap_allsex.png",
                 facecolor=fig.get_facecolor(), edgecolor="none")
@@ -1067,9 +1089,9 @@ def _plot_demography(by_band_sex_csv: Path, by_age_sex_csv: Path, out_dir: Path,
 def _plot_risk_scores(risk_csv: Path, out_dir: Path) -> None:
     """
     Read baseline_risk_scores_by_sex.csv and draw:
-      • Heatmaps for each year (procedure‑specific).
+      • Heatmaps for each year (procedure-specific).
       • Δ heatmap (latest − earliest).
-      • Bar charts of average risk by age‑band, split by sex.
+      • Bar charts of average risk by age-band, split by sex.
     """
     if not risk_csv or not risk_csv.exists():
         log.warning("Risk scores CSV %s not found; skipping risk plots.", risk_csv)
@@ -1105,7 +1127,7 @@ def _plot_risk_scores(risk_csv: Path, out_dir: Path) -> None:
             ax.set_yticks(range(len(pivot.index)))
             ax.set_yticklabels(pivot.index)
             ax.set_title(f"{proc.upper()} risk {y}")
-            fig.colorbar(im, ax=ax, label="Per‑capita risk")
+            fig.colorbar(im, ax=ax, label="Per-capita risk")
             fig.tight_layout()
             _savefig_current(out_dir / f"{proc}_heatmap_{y}.png")
 
@@ -1151,14 +1173,14 @@ def _plot_risk_scores(risk_csv: Path, out_dir: Path) -> None:
             ax.bar(x + (i - 0.5) * width, vals, width, label=sex)
         ax.set_xticks(x)
         ax.set_xticklabels(bands_ord, rotation=30, ha="right")
-        ax.set_ylabel("Average per‑capita risk")
-        ax.set_title(f"{proc.upper()} average risk by age‑band and sex")
+        ax.set_ylabel("Average per-capita risk")
+        ax.set_title(f"{proc.upper()} average risk by age-band and sex")
         ax.legend()
         fig.tight_layout()
         _savefig_current(out_dir / f"{proc}_bar_avg_risks.png")
 
 # =============================================================================
-# Index projection helpers (population‑rate and linear/constant)
+# Index projection helpers (population-rate and linear/constant)
 # =============================================================================
 
 def _parse_year_selection(spec, available_years: np.ndarray) -> List[int]:
@@ -1188,7 +1210,7 @@ def _estimate_rates_from_observed(
     min_age: int = 0
 ) -> Dict[int, float]:
     """
-    Estimate per‑age procedure rates from observed counts and population.
+    Estimate per-age procedure rates from observed counts and population.
 
     For each year in years_sel:
       - For each age_band in obs_df:
@@ -1241,7 +1263,7 @@ def _project_index_by_pop_rate(
     pr: PopRateSettings
 ) -> pd.DataFrame:
     """
-    Project index volumes by applying per‑age rates to population.
+    Project index volumes by applying per-age rates to population.
 
     Returns a df with columns [year, age_band, sex, count, src], where src is
     "observed" or "pop_rate".
@@ -1262,7 +1284,7 @@ def _project_index_by_pop_rate(
         )
 
     if not base_rate:
-        log.warning("Population‑based rates unavailable; skipping pop_rate projection.")
+        log.warning("Population-based rates unavailable; skipping pop_rate projection.")
         return obs_df
 
     future_years = list(range(last_obs_year + 1, end_year + 1))
@@ -1326,7 +1348,7 @@ def _linear_or_constant(
     v5/v7 style index projection on TOTAL volume:
       - 'linear': linear fit on last 'window' years.
       - 'constant': constant 'const_value' from 'const_from_year' onward.
-    Age‑band distribution is just a placeholder; can be re‑distributed using
+    Age-band distribution is just a placeholder; can be re-distributed using
     population shares in redistribute_future_by_population().
     """
     df = obs_df.copy()
@@ -1419,12 +1441,12 @@ def redistribute_future_by_population(
     return pd.concat([keep, expanded], ignore_index=True)
 
 # =============================================================================
-# Redo‑SAVR loader
+# Redo-SAVR loader
 # =============================================================================
 
 def _read_redo_savr_csv_to_year_totals(path: Path) -> Dict[int, int]:
     """
-    Read a redo‑SAVR csv as either:
+    Read a redo-SAVR csv as either:
       - year, count
       - sex, age_band, year, count
     and aggregate totals per year.
@@ -1466,7 +1488,7 @@ def _read_redo_savr_csv_to_year_totals(path: Path) -> Dict[int, int]:
     return {}
 
 # =============================================================================
-# Monte‑Carlo simulator
+# Monte-Carlo simulator
 # =============================================================================
 
 class DistFactory:
@@ -1581,7 +1603,7 @@ class ViVSimulator:
 
         log.info("TAVI rows %d, SAVR rows %d (observed + projection)", len(self.tavi_df), len(self.savr_df))
 
-        # Determine earliest year for flow plots (so we can show pre‑simulate_from)
+        # Determine earliest year for flow plots (so we can show pre-simulate_from)
         self.flow_from_year = int(min(self.tavi_df["year"].min(), self.savr_df["year"].min()))
 
         # --- Durability distributions ----------------------------------------
@@ -1611,23 +1633,23 @@ class ViVSimulator:
             self.surv_int  = norm(loc=s["intermediate"]["median"], scale=s["intermediate"]["sd"])
             self.surv_high = norm(loc=s["high"]["median"],         scale=s["high"]["sd"])
 
-        # --- Redo‑SAVR absolute targets -------------------------------------
+        # --- Redo-SAVR absolute targets -------------------------------------
         self.redo_targets = self._load_redo_savr_numbers()
 
     # -------------------------------------------------------------------------
-    # Redo‑SAVR targets
+    # Redo-SAVR targets
     # -------------------------------------------------------------------------
     def _load_redo_savr_numbers(self) -> Dict[int, int]:
         """
-        Load absolute redo‑SAVR targets.
+        Load absolute redo-SAVR targets.
 
         Priority:
           1) cfg.redo_savr_numbers.{values|path}
           2) cfg.procedure_counts["redo_savr"]
 
         Mode:
-          - 'replace_rates' (default): per‑event redo_rates are turned OFF and
-            we subtract absolute redo targets from TAVR‑in‑SAVR in post‑processing.
+          - 'replace_rates' (default): per-event redo_rates are turned OFF and
+            we subtract absolute redo targets from TAVR-in-SAVR in post-processing.
         """
         self.redo_mode = "replace_rates"
         self.rr_savr_cfg = float(self.cfg.redo_rates.get("savr_after_savr", 0.0))
@@ -1660,7 +1682,7 @@ class ViVSimulator:
                     pass
 
         # If we have absolute targets AND mode is 'replace_rates', we disable
-        # the per‑event redo_rates during simulation to avoid double‑counting.
+        # the per-event redo_rates during simulation to avoid double-counting.
         self.use_redo_rates = not (out and self.redo_mode == "replace_rates")
         if out and not self.use_redo_rates:
             if (self.rr_savr_cfg > 0) or (self.rr_tavi_cfg > 0):
@@ -1707,7 +1729,7 @@ class ViVSimulator:
     # -------------------------------------------------------------------------
     def _risk_mix(self, proc_type: str, year: int) -> Dict[str, float]:
         """
-        Return risk‑category mixture for a given procedure and year, based on cfg.risk_mix.
+        Return risk-category mixture for a given procedure and year, based on cfg.risk_mix.
         """
         if proc_type == "savr":
             return self.cfg.risk_mix["savr"]
@@ -1721,7 +1743,7 @@ class ViVSimulator:
 
     def _sample_survival(self, tag: str, ages: np.ndarray) -> np.ndarray:
         """
-        Draw survival times (post‑index) for each risk category and apply age hazard if configured.
+        Draw survival times (post-index) for each risk category and apply age hazard if configured.
         """
         if tag == "low":
             base = self.surv_low.rvs(len(ages), random_state=self.rng)
@@ -1747,7 +1769,7 @@ class ViVSimulator:
     def _pen(self, vtype: str, year: int) -> float:
         """
         Penetration: fraction of viable failures that receive ViV in a given year,
-        before redo‑SAVR subtraction.
+        before redo-SAVR subtraction.
 
         Implemented as:
           base_penetration(year) * per_run_penetration_jitter
@@ -1758,7 +1780,7 @@ class ViVSimulator:
         return float(np.clip(base * factor, 0.0, 1.0))
 
     # -------------------------------------------------------------------------
-    # Single Monte‑Carlo run
+    # Single Monte-Carlo run
     # -------------------------------------------------------------------------
     def run_once(self, run_id: int = 0) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
@@ -1767,7 +1789,7 @@ class ViVSimulator:
           real_df : [year, viv_type, count]                 (realized ViV after penetration/redo)
           flow_df : [year, proc, index_cnt, deaths, failures, viable]
         """
-        # Per‑run jitter for penetration
+        # Per-run jitter for penetration
         if self.pen_pct_sd > 0:
             self._pen_run_factor = float(
                 np.clip(self.rng.normal(1.0, self.pen_pct_sd), 0.0, 2.0)
@@ -1920,9 +1942,9 @@ def _plot_flow(stats: pd.DataFrame, proc: str, out_path: Path, cfg: Config) -> N
     """
     Flow summary for one procedure:
       - Index procedures per calendar year
-      - Deaths per year (non‑cumulative)
+      - Deaths per year (non-cumulative)
       - Valve failures per year
-      - Viable ViV candidates (failures with patients alive at failure in‑window)
+      - Viable ViV candidates (failures with patients alive at failure in-window)
     """
     sub = stats[stats["proc"] == proc].set_index("year").sort_index()
     plt.figure(figsize=(9, 5), dpi=140)
@@ -1934,7 +1956,7 @@ def _plot_flow(stats: pd.DataFrame, proc: str, out_path: Path, cfg: Config) -> N
     _apply_xrange_and_focus(ax, cfg)
     plt.title(f"Patient flow – {proc.upper()}")
     plt.xlabel("Calendar year")
-    plt.ylabel("Head‑count")
+    plt.ylabel("Head-count")
     plt.legend()
     plt.tight_layout()
     _savefig_current(out_path)
@@ -1981,9 +2003,9 @@ def _save_viv_qc_plots(detail: pd.DataFrame, summary: pd.DataFrame,
                        out_dir: Path, age_edges: List[int],
                        cfg: Config) -> None:
     """
-    v5‑style line plots for ViV totals:
+    v5-style line plots for ViV totals:
 
-      detail  : per‑year per‑type per‑risk per‑age_bin; only its index shape is used.
+      detail  : per-year per-type per-risk per-age_bin; only its index shape is used.
       summary : columns [year, viv_type, mean, sd] or [year, viv_type, mean]
 
     Saves:
@@ -2050,7 +2072,7 @@ def _save_viv_qc_plots(detail: pd.DataFrame, summary: pd.DataFrame,
             )
 
     _apply_xrange_and_focus(ax, cfg)
-    ax.set_title("Predicted ViV‑TAVI volumes")
+    ax.set_title("Predicted ViV-TAVI volumes")
     ax.set_xlabel("Calendar year")
     ax.set_ylabel("Procedures / yr")
     ax.xaxis.set_major_locator(mtick.MultipleLocator(5))
@@ -2071,9 +2093,9 @@ def _plot_viv_pretty(realized_summary: pd.DataFrame,
                      label_bars: bool,
                      cfg: Config) -> None:
     """
-    Image‑C‑like plot of realized ViV volume:
+    Image-C-like plot of realized ViV volume:
       • Bars: total ViV per year.
-      • Lines: TAVR‑in‑SAVR and TAVR‑in‑TAVR.
+      • Lines: TAVR-in-SAVR and TAVR-in-TAVR.
     """
     sub = realized_summary[(realized_summary["year"] >= year_lo) &
                            (realized_summary["year"] <= year_hi)]
@@ -2093,12 +2115,12 @@ def _plot_viv_pretty(realized_summary: pd.DataFrame,
     )
     line_savr, = ax.plot(
         wide.index, wide["tavi_in_savr"],
-        marker="o", label="TAVR‑in‑SAVR",
+        marker="o", label="TAVR-in-SAVR",
         color="red", alpha=0.85, linewidth=2, zorder=3
     )
     line_tavi, = ax.plot(
         wide.index, wide["tavi_in_tavi"],
-        marker="s", label="TAVR‑in‑TAVR",
+        marker="s", label="TAVR-in-TAVR",
         color="blue", alpha=0.85, linewidth=2, zorder=3
     )
 
@@ -2147,7 +2169,7 @@ def _plot_viv_pretty_with_overlay(pre_summary: pd.DataFrame,
                                   label_bars: bool,
                                   cfg: Config) -> None:
     """
-    Image‑C‑like plot with overlay:
+    Image-C-like plot with overlay:
       • Dashed lines: PRE (e.g. before leaflet modification).
       • Solid lines + bars: POST (e.g. after technique change).
     """
@@ -2173,12 +2195,12 @@ def _plot_viv_pretty_with_overlay(pre_summary: pd.DataFrame,
     )
     l1, = ax.plot(
         post.index, post["tavi_in_savr"],
-        marker="o", label="TAVR‑in‑SAVR (post)",
+        marker="o", label="TAVR-in-SAVR (post)",
         color="red", alpha=0.9, linewidth=2, zorder=3
     )
     l2, = ax.plot(
         post.index, post["tavi_in_tavi"],
-        marker="s", label="TAVR‑in‑TAVR (post)",
+        marker="s", label="TAVR-in-TAVR (post)",
         color="blue", alpha=0.9, linewidth=2, zorder=3
     )
 
@@ -2233,7 +2255,7 @@ def _plot_viv_pretty_with_overlay(pre_summary: pd.DataFrame,
     plt.close(fig)
 
 # =============================================================================
-# Top‑level driver
+# Top-level driver
 # =============================================================================
 
 def run_simulation(cfg: Config, dirs: Dirs):
@@ -2269,7 +2291,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
     plt.tight_layout()
     _savefig_current(dirs.fig_index / "index_volume_overlay.png")
 
-    # Monte‑Carlo
+    # Monte-Carlo
     cand_runs, real_runs, flow_runs = [], [], []
     n_runs = int(cfg.simulation.get("n_runs", 100))
     verbose = bool(cfg.simulation.get("verbose", False))
@@ -2284,7 +2306,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
         if verbose and ((i % progress_every == 0) or (i == n_runs - 1)):
             totals = real.groupby("viv_type")["count"].sum() if len(real) else {}
             log.info(
-                "Run %d/%d: realized ViV — TAVR‑in‑SAVR=%s, TAVR‑in‑TAVR=%s",
+                "Run %d/%d: realized ViV — TAVR-in-SAVR=%s, TAVR-in-TAVR=%s",
                 i + 1, n_runs,
                 int(totals.get("tavi_in_savr", 0)),
                 int(totals.get("tavi_in_tavi", 0)),
@@ -2314,7 +2336,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
                     .agg(mean=("count", "mean"), sd=("count", "std"))
                     .reset_index())
 
-    # For QA: old v5‑like mean‑of‑bins (may be deflated)
+    # For QA: old v5-like mean-of-bins (may be deflated)
     cand_v5like = (cand_all.groupby(["year", "viv_type"])
                    .agg(mean=("count", "mean"), sd=("count", "std"))
                    .reset_index())
@@ -2334,7 +2356,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
     _plot_flow(flow_mean, "savr", dirs.fig_flow / "flow_savr.png", cfg)
     _plot_flow(flow_mean, "tavi", dirs.fig_flow / "flow_tavi.png", cfg)
 
-    # Redo reconciliation (applies to TAVR‑in‑SAVR only)
+    # Redo reconciliation (applies to TAVR-in-SAVR only)
     redo_targets = sim.redo_targets
     if redo_targets:
         realized_adj = real_summary.copy()
@@ -2365,7 +2387,7 @@ def run_simulation(cfg: Config, dirs: Dirs):
         realized_adj.to_csv(dirs.tables_viv / "viv_forecast_realized.csv", index=False)
         log.info("No redo-SAVR absolute targets; viv_forecast_realized.csv mirrors realized means.")
 
-    # v5‑style line charts for 3 series: candidates, realized PRE, realized POST
+    # v5-style line charts for 3 series: candidates, realized PRE, realized POST
     lines_dir_cand = dirs.fig_viv / "lines_candidates"
     lines_dir_pre  = dirs.fig_viv / "lines_pre"
     lines_dir_post = dirs.fig_viv / "lines_post"
@@ -2495,7 +2517,7 @@ def main():
     p.add_argument("--config", required=True)
     p.add_argument("--log-level", default="INFO")
     p.add_argument("--precompute-only", action="store_true",
-                   help="Run demography + risk pre‑compute and exit.")
+                   help="Run demography + risk pre-compute and exit.")
     args = p.parse_args()
 
     raw_cfg_text = Path(args.config).read_text(encoding="utf-8")
@@ -2522,14 +2544,12 @@ def main():
     log.info("Outputs will be stored under %s", out_root)
 
     # -------------------------------------------------------------------------
-    # Pre‑compute: demography + baseline risks + redo‑SAVR targets
+    # Pre-compute: demography + baseline risks + redo-SAVR targets
     # -------------------------------------------------------------------------
     if cfg.precompute and cfg.precompute.enabled:
         pre = cfg.precompute
-        log.info("Pre‑compute enabled: building age/sex population, risk scores, redo targets.")
+        log.info("Pre-compute enabled: building age/sex population, risk scores, redo targets.")
 
-        pop_path = Path(str(pre.population_source["path"]))
-        units    = float(pre.population_source.get("units_multiplier", 10000.0))
 
         # Derived directory is relative to project root (one level up from runs/<exp>/...)
         derived_root = out_root.parent.parent
@@ -2537,17 +2557,38 @@ def main():
                        else derived_root / pre.derived_dir)
         derived_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1) Build population projections
+        pop_path = Path(cfg.precompute.population_source["path"])
+        units    = float(cfg.precompute.population_source.get("units_multiplier", 10000.0))
+        derived_dir = (Path(cfg.precompute.derived_dir) if Path(cfg.precompute.derived_dir).is_absolute()
+                       else out_root.parent.parent / cfg.precompute.derived_dir)
+        derived_dir.mkdir(parents=True, exist_ok=True)
+
+        # --- NEW: ensure age projections cover 2015 -> simulation end (e.g. 2050) ---
+        # We still respect precompute.project_years as the "core" window, but for the
+        # population tables we expand to:
+        #   min(2015, risk_years, project_years, simulate_from)
+        #        ->
+        #   max(project_years, risk_years, end_year)
+        sim_lo  = int(cfg.years.get("simulate_from", cfg.years["end"]))
+        sim_hi  = int(cfg.years["end"])
+        risk_lo = min(cfg.precompute.risk_years) if cfg.precompute.risk_years else sim_lo
+        risk_hi = max(cfg.precompute.risk_years) if cfg.precompute.risk_years else sim_hi
+        base_lo, base_hi = cfg.precompute.project_years[0], cfg.precompute.project_years[1]
+        span_lo = min(2022, base_lo, risk_lo, sim_lo)
+        span_hi = max(base_hi, risk_hi, sim_hi)
+
         p_band_sex, p_age_sex, p_age_all = build_age_and_sex_population(
             pop_csv=pop_path,
             out_dir=derived_dir,
             units_multiplier=units,
-            project_span=(pre.project_years[0], pre.project_years[1]),
-            split_50_64=tuple(pre.split_50_64),
-            split_75_84=tuple(pre.split_75_84),
-            sex_ratio_50_64=float(pre.sex_ratio_50_64),
-            open_width=int(pre.open_age_bin_width),
+            project_span=(span_lo, span_hi),
+            split_50_64=tuple(cfg.precompute.split_50_64),
+            split_75_84=tuple(cfg.precompute.split_75_84),
+            sex_ratio_50_64=float(cfg.precompute.sex_ratio_50_64),
+            open_width=int(cfg.precompute.open_age_bin_width),
         )
+        
+
         try:
             shutil.copy2(p_age_all,  dirs.inputs_snapshot / p_age_all.name)
             shutil.copy2(p_band_sex, dirs.inputs_snapshot / p_band_sex.name)
@@ -2555,7 +2596,7 @@ def main():
         except Exception:
             pass
 
-        # 2) Baseline per‑capita risk scores
+        # 2) Baseline per-capita risk scores
         redo_proc_path = Path(str(cfg.procedure_counts.get("redo_savr", ""))) \
                          if "redo_savr" in cfg.procedure_counts else None
         risk_out = derived_dir / "baseline_risk_scores_by_sex.csv"
@@ -2572,7 +2613,7 @@ def main():
         except Exception:
             pass
 
-        # 3) Redo‑SAVR absolute targets (optional)
+        # 3) Redo-SAVR absolute targets (optional)
         if pre.build_redo_savr_targets:
             redo_targets_csv = project_redo_savr_targets(
                 risk_scores_csv=risk_csv,
@@ -2606,18 +2647,37 @@ def main():
                 "pop_col": "population",
             }
 
-        # 5) Demography & risk plots
-        _plot_demography(p_band_sex, p_age_sex, dirs.fig_demog, cfg)
-        _plot_risk_scores(risk_csv, dirs.fig_risks)
+        # # 5) Demography & risk plots
+        # _plot_demography(p_band_sex, p_age_sex, dirs.fig_demog, cfg)
+        # _plot_risk_scores(risk_csv, dirs.fig_risks)
+        # log.info("Demography figures stored under %s", dirs.fig_demog)
+        # log.info("Risk figures stored under %s", dirs.fig_risks)
+        
+
+        # 5) New demography and risks plots section
+        try:
+            _plot_demography(
+                p_band_sex,
+                p_age_sex,
+                dirs.fig_demog,
+                units_scale=units, 
+                cfg=cfg,
+            )
+            _plot_risk_scores(risk_csv, dirs.fig_risks)
+
+
+        except Exception as e:
+            log.warning("Could not create demography/risk plots: %s", e)
+            
         log.info("Demography figures stored under %s", dirs.fig_demog)
         log.info("Risk figures stored under %s", dirs.fig_risks)
 
     if args.precompute_only:
-        log.info("Pre‑compute completed. Exiting due to --precompute-only.")
+        log.info("Pre-compute completed. Exiting due to --precompute-only.")
         return
 
     # -------------------------------------------------------------------------
-    # Monte‑Carlo simulation
+    # Monte-Carlo simulation
     # -------------------------------------------------------------------------
     cand, real, flow = run_simulation(cfg, dirs)
 
@@ -2629,14 +2689,14 @@ def main():
     log.info("  %s  — SAVR index volumes (year × age_band × sex × src)", dirs.tables_index / "savr_with_projection.csv")
     log.info("  %s  — Mean patient flow per year (index_cnt, deaths, failures, viable)", dirs.tables_flow / "patient_flow_mean.csv")
     log.info("  %s  — ViV candidates (mean ± SD across runs, by year × viv_type)", dirs.tables_viv / "viv_candidates_totals.csv")
-    log.info("  %s  — v5‑style candidate totals (mean of bins, QA only)", dirs.tables_viv / "viv_candidates_v5like.csv")
+    log.info("  %s  — v5-style candidate totals (mean of bins, QA only)", dirs.tables_viv / "viv_candidates_v5like.csv")
     log.info("  %s  — ViV realized (mean ± SD across runs)", dirs.tables_viv / "viv_forecast.csv")
-    log.info("  %s  — ViV realized after redo‑SAVR subtraction", dirs.tables_viv / "viv_forecast_realized.csv")
+    log.info("  %s  — ViV realized after redo-SAVR subtraction", dirs.tables_viv / "viv_forecast_realized.csv")
 
     log.info("QC tables:")
     log.info("  %s  — TAVI index projection slice", dirs.qc_index / "tavi_index_projection_*")
     log.info("  %s  — SAVR index projection slice", dirs.qc_index / "savr_index_projection_*")
-    log.info("  %s  — Redo‑SAVR reconciliation (before/after subtraction)", dirs.qc_redo / "redo_savr_qc.csv")
+    log.info("  %s  — Redo-SAVR reconciliation (before/after subtraction)", dirs.qc_redo / "redo_savr_qc.csv")
 
     log.info("Figures (PNG):")
     log.info("  %s  — TAVI index: observed vs projected", dirs.fig_index / "image_A_tavi_index.png")
@@ -2644,8 +2704,8 @@ def main():
     log.info("  %s  — TAVI vs SAVR index overlay", dirs.fig_index / "index_volume_overlay.png")
     log.info("  %s  — Flow diagram for TAVI (index, deaths, failures, viable)", dirs.fig_flow / "flow_tavi.png")
     log.info("  %s  — Flow diagram for SAVR (index, deaths, failures, viable)", dirs.fig_flow / "flow_savr.png")
-    log.info("  %s  — Image‑C‑style ViV forecast (bars + lines)", dirs.fig_viv / "image_C_viv_pretty_*.png")
-    log.info("  %s  — Demography plots (age‑band lines, heatmap)", dirs.fig_demog)
+    log.info("  %s  — Image-C-style ViV forecast (bars + lines)", dirs.fig_viv / "image_C_viv_pretty_*.png")
+    log.info("  %s  — Demography plots (age-band lines, heatmap)", dirs.fig_demog)
     log.info("  %s  — Risk plots (heatmaps and bar charts)", dirs.fig_risks)
 
 if __name__ == "__main__":
