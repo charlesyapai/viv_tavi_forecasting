@@ -11,7 +11,7 @@ scenario_tag: korea_v1
 # Years for simulation (failures emerging in this window are counted)
 years:
   simulate_from: 2025
-  end: 2035
+  end: 2050
 
 # Observed registry counts (long format): sex,age_band,year,count
 # Replace these 3 CSV paths with your actual files.
@@ -38,6 +38,9 @@ precompute:
   open_age_bin_width: 20            # makes ≥85 → ages 85..104 for single‑year expansion
   derived_dir: derived               # where derived CSVs will be written
   build_redo_savr_targets: true      # project absolute redo-SAVR yearly totals
+  make_plots: true
+  project_years: [2023, 2035]
+
 
 # ————————————————————————————————————————————————————————————————————————
 # Index projection: use population-rate mode (rates learned from 2023–2024)
@@ -54,12 +57,12 @@ index_projection:
       obs_years: "2023-2024"
       min_age: 50
 
-# The population file will be injected automatically by the precompute step:
-# population_projection:
-#   path: derived/age_projections_by_year_age_allsex.csv
-#   year_col: year
-#   age_col: age
-#   pop_col: population
+The population file will be injected automatically by the precompute step:
+population_projection:
+  path: derived/age_projections_by_year_age_allsex.csv
+  year_col: year
+  age_col: age
+  pop_col: population
 
 # Redo-SAVR absolute targets will also be injected during precompute unless
 # you prefer to specify them manually here:
@@ -114,9 +117,17 @@ redo_rates:
   savr_after_tavi: 0.00
 
 simulation:
-  n_runs: 30
+  n_runs: 30            # increase if you want tighter CIs
   rng_seed: 2025
   min_dur_years: 1.0
+  verbose: true          # NEW
+  progress_every: 5      # NEW (log every N runs)
+
+  # NEW: per-run parameter jitter (applied multiplicatively)
+  jitter:
+    durability_pct_sd: 7.5     # SD of multiplicative noise on durability (in %)
+    survival_pct_sd: 5.0       # SD of multiplicative noise on survival (in %)
+    penetration_pct_sd: 10.0   # SD of multiplicative noise on penetration (in %)
 
 # cosmetic / outputs
 plotting:
@@ -126,19 +137,18 @@ plotting:
   label_bars: true
 
 figure_ranges:
-  viv_years: [2015, 2050]
-  index_projection_years: [2015, 2050]
+  x_axis: [2015, 2050] # global x range for main time-series figures
+  focus_band: [2025, 2035] # shaded band
+  index_projection_years: [2025, 2035]   # existing, keep
+  waterfall_years: [2025, 2030, 2035]    # new; used in §2C
+  viv_years: [2023, 2035]
+
+
 
 # legacy key kept for compatibility (not used)
 outputs: { root: runs }
 
 
-precompute:
-  enabled: true
-  population_source:
-    path: data/korea_population_combined.csv
-  risk_years: [2023, 2024]
-  risk_rule: avg_2023_2024   # or 2024_only, 2023_only
-  split_50_64: [0.3334, 0.3333, 0.3333]
-  split_75_84: [0.5, 0.5]
-  make_plots: true
+
+
+
