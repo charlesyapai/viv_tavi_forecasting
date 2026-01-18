@@ -10,7 +10,7 @@ scenario_tag: korea_v1
 
 # Years for simulation (failures emerging in this window are counted)
 years:
-  simulate_from: 2025
+  simulate_from: 2022
   end: 2050
 
 # Observed registry counts (long format): sex,age_band,year,count
@@ -30,17 +30,15 @@ precompute:
     path: data/korea_population_combined.csv
     units_multiplier: 10000
   risk_years: [2023, 2024]
-  risk_rule: avg_2023_2024          # 2024_only | 2023_only | avg_2023_2024
-  project_years: [2025, 2050]
-  split_75_84: [0.5, 0.5]           # (75–79, 80–84)
-  split_50_64: [0.333333, 0.333333, 0.333334]  # (50–54, 55–59, 60–64)
-  sex_ratio_50_64: 100              # Men per 100 Women (assumption)
-  open_age_bin_width: 20            # makes ≥85 → ages 85..104 for single‑year expansion
-  derived_dir: derived               # where derived CSVs will be written
-  build_redo_savr_targets: true      # project absolute redo-SAVR yearly totals
+  risk_rule: avg_2023_2024 # 2024_only | 2023_only | avg_2023_2024
+  project_years: [2022, 2050]
+  split_75_84: [0.5, 0.5] # (75–79, 80–84)
+  split_50_64: [0.333333, 0.333333, 0.333334] # (50–54, 55–59, 60–64)
+  sex_ratio_50_64: 100 # Men per 100 Women (assumption)
+  open_age_bin_width: 20 # makes ≥85 → ages 85..104 for single‑year expansion
+  derived_dir: derived # where derived CSVs will be written
+  build_redo_savr_targets: true # project absolute redo-SAVR yearly totals
   make_plots: true
-  project_years: [2023, 2035]
-
 
 # ————————————————————————————————————————————————————————————————————————
 # Index projection: use population-rate mode (rates learned from 2023–2024)
@@ -72,21 +70,20 @@ population_projection:
 #   fill_missing: { method: linear, range: [2025, 2035] }
 
 # Monte-Carlo and model details (consistent with Genereux/Ohno assumptions)
-open_age_bin_width: 20    # used when parsing open bands like ≥80
-age_bins: [60, 65, 70, 75, 80, 85, 90, 95]   # labeling bins for outputs
+open_age_bin_width: 20 # used when parsing open bands like ≥80
+age_bins: [60, 65, 70, 75, 80, 85, 90, 95] # labeling bins for outputs
 
 durability:
   tavi:
     early: { mean: 4.0, sd: 1.5, weight: 0.2 }
-    late:  { mean: 11.5, sd: 3.5, weight: 0.8 }
+    late: { mean: 11.5, sd: 3.5, weight: 0.8 }
   savr_bioprosthetic:
-    lt70:  { mean: 10.0, sd: 5.0, weight: 1.0 }
+    lt70: { mean: 10.0, sd: 5.0, weight: 1.0 }
     gte70: { mean: 17.0, sd: 5.0, weight: 1.0 }
 
-
 survival_curves:
-  low_risk:       { median: 11.0, sd: 3.0 }   # can be tuned; engine can apply age hazard below
-  int_high_risk:  { median: 6.0,  sd: 2.0 }
+  low_risk: { median: 11.0, sd: 3.0 } # can be tuned; engine can apply age hazard below
+  int_high_risk: { median: 6.0, sd: 2.0 }
 
 risk_model:
   categories: 2
@@ -101,7 +98,7 @@ age_hazard:
 # Risk mix (share of low vs intermediate+high) by year ranges
 risk_mix:
   tavi:
-    "2014-2018": { low: 0.0,  ih: 1.0 }
+    "2014-2018": { low: 0.0, ih: 1.0 }
     "2019-2024": { low: 0.33, ih: 0.67 }
     "2025-2035": { low: 0.50, ih: 0.50 }
   savr: { low: 0.85, ih: 0.15 }
@@ -117,38 +114,31 @@ redo_rates:
   savr_after_tavi: 0.00
 
 simulation:
-  n_runs: 30            # increase if you want tighter CIs
+  n_runs: 100 # increase if you want tighter CIs
   rng_seed: 2025
   min_dur_years: 1.0
-  verbose: true          # NEW
-  progress_every: 5      # NEW (log every N runs)
+  verbose: true # NEW
+  progress_every: 5 # NEW (log every N runs)
 
   # NEW: per-run parameter jitter (applied multiplicatively)
   jitter:
-    durability_pct_sd: 7.5     # SD of multiplicative noise on durability (in %)
-    survival_pct_sd: 5.0       # SD of multiplicative noise on survival (in %)
-    penetration_pct_sd: 10.0   # SD of multiplicative noise on penetration (in %)
+    durability_pct_sd: 7.5 # SD of multiplicative noise on durability (in %)
+    survival_pct_sd: 5.0 # SD of multiplicative noise on survival (in %)
+    penetration_pct_sd: 10.0 # SD of multiplicative noise on penetration (in %)
 
 # cosmetic / outputs
 plotting:
   background: light
-  image_c_source: post          # pre | post | both
+  image_c_source: post # pre | post | both
   viv_total_bar_color: null
   label_bars: true
 
 figure_ranges:
-  x_axis: [2015, 2050] # global x range for main time-series figures
+  x_axis: [2022, 2050] # global x range for main time-series figures
   focus_band: [2025, 2035] # shaded band
-  index_projection_years: [2025, 2035]   # existing, keep
-  waterfall_years: [2025, 2030, 2035]    # new; used in §2C
-  viv_years: [2023, 2035]
-
-
+  index_projection_years: [2025, 2035] # existing, keep
+  waterfall_years: [2025, 2030, 2035] # new; used in §2C
+  viv_years: [2022, 2050]
 
 # legacy key kept for compatibility (not used)
 outputs: { root: runs }
-
-
-
-
-

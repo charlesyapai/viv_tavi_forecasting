@@ -2151,14 +2151,18 @@ def _plot_viv_pretty(realized_summary: pd.DataFrame,
                 fontweight="bold", color=bar_color_final, zorder=4
             )
 
-    _apply_xrange_and_focus(ax, cfg)
     ax.set_title(f"Predicted ViV volume ({year_lo}–{year_hi})")
     ax.set_xlabel("Year")
     ax.set_ylabel("Procedures / yr")
     ax.legend()
+
+    # Apply global x‑axis range and highlight band (e.g. 2025–2035)
+    _apply_xrange_and_focus(ax, cfg)
+
     fig.tight_layout()
     fig.savefig(out_path, facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)
+
 
 
 def _plot_viv_pretty_with_overlay(pre_summary: pd.DataFrame,
@@ -2245,14 +2249,139 @@ def _plot_viv_pretty_with_overlay(pre_summary: pd.DataFrame,
                 fontweight="bold", color=bar_color_final, zorder=4
             )
 
-    _apply_xrange_and_focus(ax, cfg)
     ax.set_title(f"Predicted ViV volume (pre vs post, {year_lo}–{year_hi})")
     ax.set_xlabel("Year")
     ax.set_ylabel("Procedures / yr")
     ax.legend()
+
+    _apply_xrange_and_focus(ax, cfg)
+
     fig.tight_layout()
     fig.savefig(out_path, facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)
+
+
+def _plot_viv_candidates_vs_realized(cand_summary: pd.DataFrame,
+                                     realized_adj: pd.DataFrame,
+                                     year_lo: int,
+                                     year_hi: int,
+                                     out_path: Path,
+                                     bar_color: Optional[str] = None,
+                                     cfg=None) -> None:
+    """
+    Companion to the Image‑C style plot that shows *available ViV candidates*
+    (before penetration) vs *realized ViV*.
+
+    • Bars: total candidates (TAVR‑in‑SAVR + TAVR‑in‑TAVR)
+    • Solid lines: candidate counts by ViV type
+    • Dashed lines: realized counts by ViV type (post–redo adjustment)
+    """
+    # --- Candidates (pre‑penetration) ---
+    sub_cand = cand_summary[(cand_summary.year >= year_lo) &
+                            (cand_summary.year <= year_hi)]
+    wide_cand = sub_cand.pivot(index="year", columns="viv_type", values="mean").fillna(0.0)
+    for c in ("tavi_in_savr", "tavi_in_tavi"):
+        if c not in wide_cand.columns:
+            wide_cand[c] = 0.0
+    wide_cand["total"] = wide_cand["tavi_in_savr"] + wide_cand["tavi_in_tavi"]
+
+    # --- Realized (post‑penetration, after redo haircut) ---
+    real = realized_adj.copy()
+    value_col = "realized" if "realized" in real.columns else "mean"
+    sub_real = real[(real["year"] >= year_lo) & (real["year"] <= year_hi)]
+    wide_real = sub_real.pivot(index="year", columns="viv_type", values=value_col)\
+                        .reindex(index=wide_cand.index, fill_value=0.0)
+    for c in ("tavi_in_savr", "tavi_in_tavi"):
+        if c not in wide_real.columns:
+            wide_real[c] = 0.0
+
+    fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
+    bar_color_final = bar_color or "#bbbbbb"
+
+    # Bars = total candidates
+    bars = ax.bar(
+        wide_cand.index,
+        wide_cand["total"],
+        label="Total ViV candidates",
+        color=bar_color_final,
+        alpha=0.4,
+        zorder=1,
+    )
+
+    # Solid lines = candidate by type
+    ax.plot(
+        wide_cand.index,
+        wide_cand["tavi_in_savr"],
+        marker="o",
+        linewidth=2,
+        color="tab:red",
+        label="Candidates: TAVR-in-SAVR",
+        zorder=3,
+    )
+    ax.plot(
+        wide_cand.index,
+        wide_cand["tavi_in_tavi"],
+        marker="s",
+        linewidth=2,
+        color="tab:blue",
+        label="Candidates: TAVR-in-TAVR",
+        zorder=3,
+    )
+
+    # Dashed lines = realized by type
+    ax.plot(
+        wide_real.index,
+        wide_real["tavi_in_savr"],
+        linestyle="--",
+        linewidth=2,
+        color="tab:red",
+        label="Realized: TAVR-in-SAVR",
+        zorder=4,
+    )
+    ax.plot(
+        wide_real.index,
+        wide_real["tavi_in_tavi"],
+        linestyle="--",
+        linewidth=2,
+        color="tab:blue",
+        label="Realized: TAVR-in-TAVR",
+        zorder=4,
+    )
+
+    # Label bars with totals
+    max_val = float(
+        np.nanmax([
+            wide_cand[["tavi_in_savr", "tavi_in_tavi", "total"]].to_numpy().max()
+            if len(wide_cand) else 0,
+            wide_real.to_numpy().max() if len(wide_real) else 0,
+        ])
+    ) if (len(wide_cand) or len(wide_real)) else 0.0
+    y_off_bar = 0.02 * max_val if max_val > 0 else 1.0
+
+    for rect in bars:
+        h = rect.get_height()
+        if not np.isfinite(h) or h <= 0:
+            continue
+        x = rect.get_x() + rect.get_width() / 2.0
+        ax.text(
+            x, h + y_off_bar,
+            f"{int(round(h))}",
+            ha="center", va="bottom",
+            fontsize=10, fontweight="bold",
+            color=bar_color_final,
+        )
+
+    ax.set_title(f"Available ViV candidates vs realized ({year_lo}–{year_hi})")
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Procedures / yr")
+    ax.legend(ncol=2, fontsize=9)
+
+    _apply_xrange_and_focus(ax, cfg)
+
+    fig.tight_layout()
+    fig.savefig(out_path, facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close(fig)
+
 
 # =============================================================================
 # Top-level driver
@@ -2446,10 +2575,16 @@ def run_simulation(cfg: Config, dirs: Dirs):
     except Exception as e:
         log.warning("Could not copy v5-style totals CSVs to tables: %s", e)
 
-    # Image C configuration: which years & which source
-    ylo, yhi = 2023, 2035
+    # Default ViV display window: simulation window (e.g. 2015–2050),
+    # overrideable via figure_ranges.viv_years in the YAML.
+    try:
+        ylo = int(cfg.years.get("simulate_from", 2015))
+    except Exception:
+        ylo = 2015
+    yhi = int(cfg.years["end"])
     if cfg.figure_ranges and cfg.figure_ranges.get("viv_years"):
         ylo, yhi = cfg.figure_ranges["viv_years"][0], cfg.figure_ranges["viv_years"][1]
+
     bar_col = cfg.plotting.viv_total_bar_color if cfg.plotting else None
     labels_on_bars = bool(cfg.plotting.label_bars) if cfg.plotting else True
     src = (cfg.plotting.image_c_source if cfg.plotting else "post").lower()
@@ -2475,6 +2610,18 @@ def run_simulation(cfg: Config, dirs: Dirs):
             dirs.fig_viv / f"image_C_viv_pretty_{ylo}_{yhi}.png",
             bar_color=bar_col, label_bars=labels_on_bars, cfg=cfg
         )
+    
+    # Extra panel: candidates (pre‑penetration) vs realized ViV
+    _plot_viv_candidates_vs_realized(
+        cand_summary,
+        realized_adj[["year", "viv_type", "realized"]],
+        ylo,
+        yhi,
+        dirs.fig_viv / f"image_D_viv_candidates_vs_realized_{ylo}_{yhi}.png",
+        bar_color=bar_col,
+        cfg=cfg,
+    )
+
 
     # Index projection QC slices (e.g. 2025–2035)
     a, b = (cfg.figure_ranges.get("index_projection_years")
