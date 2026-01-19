@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViV TAVI Forecasting Presentation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'slide-enter': 'fadeSlideIn 0.5s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeSlideIn: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+          },
+        },
+      },
+    }
+  </script>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #f1f5f9;
+  }
+
+  #root {
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* --- Important: fix printing --- */
+  @media print {
+    /* Allow the page to grow vertically when printing */
+    body {
+      overflow: visible;
+      background: #ffffff !important;
+    }
+
+    #root,
+    .App {
+      height: auto !important;
+      width: 100% !important;
+    }
+
+    /* Disable slide animations in print so content is visible */
+    .animate-slide-enter,
+    .animate-pulse-slow,
+    [class*="animate-"] {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+</style>
+
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Load Slides Component Library -->
+  <script type="text/babel" src="slides.js"></script>
+
+  <!-- Main Application Logic -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    function App() {
+      // Access the global SlideDeck object
+      const deck = window.SlideDeck;
+      
+      if (!deck) {
+        return (
+          <div className="flex items-center justify-center h-full text-red-600 font-bold">
+            Error: SlideDeck not found. Ensure slides.js is loaded correctly.
+            <br/>
+            Note: You must run this via a local server (e.g., python -m http.server) to load external scripts.
+          </div>
+        );
+      }
+
+      const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+      const [slideSource, setSlideSource] = useState('V6'); // 'V3', 'V1', 'V2', 'All'
+
+      // Determine which set of slides to use
+      const slides = useMemo(() => {
+        return deck[slideSource] || deck.All;
+      }, [slideSource, deck]);
+
+      // Reset index if source changes
+      useEffect(() => {
+        setCurrentSlideIndex(0);
+      }, [slideSource]);
+
+      const nextSlide = () => setCurrentSlideIndex(prev => Math.min(prev + 1, slides.length - 1));
+      const prevSlide = () => setCurrentSlideIndex(prev => Math.max(prev - 1, 0));
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+          if (e.key === 'ArrowLeft') prevSlide();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [slides.length]);
+
+      const CurrentSlideComponent = slides[currentSlideIndex]?.component || (() => <div>Slide Not Found</div>);
+      const Icons = deck.Icons;
+
+        return (
+            <div className="App h-full w-full bg-slate-100 p-4">
+
+            {/* -------- NORMAL INTERACTIVE VIEW (screen only) -------- */}
+            <div className="screen-only h-full flex items-center justify-center">
+                <div className="w-full h-full max-h-[800px] bg-slate-200 flex flex-col rounded-xl overflow-hidden shadow-2xl font-sans border border-slate-300 max-w-7xl">
+                
+                {/* Toolbar / Source Selector */}
+                <div className="bg-slate-800 text-white px-4 py-2 flex items-center justify-between text-xs border-b border-slate-700">
+                    <div className="flex items-center gap-4">
+                    <span className="font-bold text-slate-400">SOURCE:</span>
+                    <div className="flex bg-slate-700 rounded p-1">
+                        {['V6', 'V5', 'V4', 'V3', 'All', 'V1', 'V2'].map(src => (
+                        <button
+                            key={src}
+                            onClick={() => setSlideSource(src)}
+                            className={`px-3 py-1 rounded transition-colors ${
+                            slideSource === src 
+                                ? 'bg-blue-600 text-white font-bold shadow' 
+                                : 'text-slate-400 hover:text-white hover:bg-slate-600'
+                            }`}
+                        >
+                            {src}
+                        </button>
+                        ))}
+                    </div>
+                    </div>
+                    <div className="text-slate-500">
+                    Use Arrow Keys to Navigate · Use browser Print → PDF to export
+                    </div>
+                </div>
+
+                {/* Slide Viewport */}
+                <div className="flex-1 bg-white overflow-hidden relative">
+                    {/* Section Tag Overlay */}
+                    {slides[currentSlideIndex]?.section && (
+                      <div className="absolute top-6 right-6 z-10 pointer-events-none">
+                        <span className="bg-slate-100/90 backdrop-blur border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold text-slate-500 uppercase tracking-wider shadow-sm">
+                          {slides[currentSlideIndex]?.section}
+                        </span>
+                      </div>
+                    )}
+                    <CurrentSlideComponent />
+                </div>
+
+                {/* Navigation Bar */}
+                <div className="h-16 bg-slate-900 text-white flex items-center justify-between px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                    <div className="flex items-center space-x-4">
+                    <span className="text-xs font-mono text-slate-500">
+                        {currentSlideIndex + 1} / {slides.length}
+                    </span>
+                    <span className="text-sm font-bold tracking-wide pl-4 border-l border-slate-700 text-slate-300">
+                        {slides[currentSlideIndex]?.label}
+                    </span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                    <button
+                        onClick={prevSlide}
+                        disabled={currentSlideIndex === 0}
+                        className={`p-2 rounded-full transition-all ${
+                        currentSlideIndex === 0
+                            ? 'text-slate-700 cursor-not-allowed'
+                            : 'hover:bg-slate-700 text-white hover:scale-110'
+                        }`}
+                    >
+                        <div className="w-6 h-6">
+                        <Icons.ChevronLeft />
+                        </div>
+                    </button>
+
+                    {/* Progress Bar */}
+                    <div className="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden mx-4">
+                        <div
+                        className="h-full bg-blue-500 transition-all duration-300"
+                        style={{
+                            width: `${((currentSlideIndex + 1) / slides.length) * 100}%`,
+                        }}
+                        />
+                    </div>
+
+                    <button
+                        onClick={nextSlide}
+                        disabled={currentSlideIndex === slides.length - 1}
+                        className={`p-2 rounded-full transition-all ${
+                        currentSlideIndex === slides.length - 1
+                            ? 'text-slate-700 cursor-not-allowed'
+                            : 'hover:bg-slate-700 text-white hover:scale-110'
+                        }`}
+                    >
+                        <div className="w-6 h-6">
+                        <Icons.ChevronRight />
+                        </div>
+                    </button>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            {/* -------- PRINT LAYOUT (all slides, print only) -------- */}
+            <div className="print-only">
+                {slides.map((slide, index) => {
+                const SlideComp = slide.component;
+                return (
+                    <div
+                    key={index}
+                    className="slide-page flex items-center justify-center bg-slate-100 p-4"
+                    >
+                    <div className="w-full max-w-7xl bg-slate-200 flex flex-col rounded-xl overflow-hidden font-sans border border-slate-300">
+                        {/* Optional small header with slide label */}
+                        <div className="bg-slate-800 text-white px-4 py-2 text-xs flex justify-between">
+                        <span>{slideSource} · {slide.label}</span>
+                        <span>{index + 1} / {slides.length}</span>
+                        </div>
+                        <div className="bg-white">
+                        <SlideComp />
+                        </div>
+                    </div>
+                    </div>
+                );
+                })}
+            </div>
+            </div>
+        );
+        }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

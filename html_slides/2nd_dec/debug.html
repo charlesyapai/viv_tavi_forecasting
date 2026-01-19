@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Presentation - All Slides</title>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      const div = document.createElement('div');
+      div.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; background: rgba(255,200,200,0.9); color: red; padding: 20px; z-index: 99999; font-family: monospace; white-space: pre-wrap;';
+      div.textContent = 'Global Error: ' + msg + '\nLine: ' + line + ':' + col + '\n' + (error ? error.stack : '');
+      document.body.appendChild(div);
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="slides.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const deck = window.SlideDeck;
+      if (!deck) return <div>No Deck</div>;
+      
+      const slides = deck.V6 || [];
+
+      return (
+        <div className="p-10 space-y-10">
+          <h1 className="text-2xl">Testing All V6 Slides</h1>
+          {slides.map((slide, index) => {
+            const Component = slide.component;
+            return (
+              <div key={index} className="border p-4">
+                <h2 className="font-bold mb-2">Slide {index + 1}: {slide.label}</h2>
+                <div className="h-[600px] relative overflow-hidden border">
+                  <Component />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
