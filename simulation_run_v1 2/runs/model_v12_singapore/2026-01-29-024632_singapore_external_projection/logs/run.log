@@ -1,0 +1,39 @@
+02:46:32 | INFO     | Outputs will be stored under runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection
+02:46:32 | INFO     | Pre-compute enabled: building age/sex population, risk scores, redo targets.
+02:46:32 | INFO     | Built population files from UN data (Years 2022-2050)
+02:46:32 | INFO     | Built index projection: TAVI rows 884, SAVR rows 884
+02:46:35 | INFO     | Demography figures stored under runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/demography
+02:46:35 | INFO     | Risk figures stored under runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/risks
+02:46:35 | INFO     | TAVI rows 884, SAVR rows 884 (observed + projection)
+02:46:35 | INFO     | Run 1/100: realized ViV — TAVR-in-SAVR=2019, TAVR-in-TAVR=545
+02:46:38 | INFO     | Run 11/100: realized ViV — TAVR-in-SAVR=2252, TAVR-in-TAVR=587
+02:46:41 | INFO     | Run 21/100: realized ViV — TAVR-in-SAVR=2197, TAVR-in-TAVR=629
+02:46:44 | INFO     | Run 31/100: realized ViV — TAVR-in-SAVR=2886, TAVR-in-TAVR=825
+02:46:47 | INFO     | Run 41/100: realized ViV — TAVR-in-SAVR=2497, TAVR-in-TAVR=636
+02:46:50 | INFO     | Run 51/100: realized ViV — TAVR-in-SAVR=2785, TAVR-in-TAVR=706
+02:46:53 | INFO     | Run 61/100: realized ViV — TAVR-in-SAVR=2572, TAVR-in-TAVR=685
+02:46:56 | INFO     | Run 71/100: realized ViV — TAVR-in-SAVR=2783, TAVR-in-TAVR=734
+02:46:59 | INFO     | Run 81/100: realized ViV — TAVR-in-SAVR=2308, TAVR-in-TAVR=641
+02:47:02 | INFO     | Run 91/100: realized ViV — TAVR-in-SAVR=2540, TAVR-in-TAVR=680
+02:47:04 | INFO     | Run 100/100: realized ViV — TAVR-in-SAVR=2555, TAVR-in-TAVR=681
+02:47:06 | INFO     | Tables (CSV):
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/index/tavi_with_projection.csv  — TAVI index volumes (year × age_band × sex × src)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/index/savr_with_projection.csv  — SAVR index volumes (year × age_band × sex × src)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/flow/patient_flow_mean.csv  — Mean patient flow per year (index_cnt, deaths, failures, viable)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/viv/viv_candidates_totals.csv  — ViV candidates (mean ± SD across runs, by year × viv_type)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/viv/viv_candidates_v5like.csv  — v5-style candidate totals (mean of bins, QA only)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/viv/viv_forecast.csv  — ViV realized (mean ± SD across runs)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/tables/viv/viv_forecast_realized.csv  — ViV realized after redo-SAVR subtraction
+02:47:06 | INFO     | QC tables:
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/qc/index_projection/tavi_index_projection_*  — TAVI index projection slice
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/qc/index_projection/savr_index_projection_*  — SAVR index projection slice
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/qc/redo/redo_savr_qc.csv  — Redo-SAVR reconciliation (before/after subtraction)
+02:47:06 | INFO     | Figures (PNG):
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/index/image_A_tavi_index.png  — TAVI index: observed vs projected
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/index/image_B_savr_index.png  — SAVR index: observed vs projected
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/index/index_volume_overlay.png  — TAVI vs SAVR index overlay
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/flow/flow_tavi.png  — Flow diagram for TAVI (index, deaths, failures, viable)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/flow/flow_savr.png  — Flow diagram for SAVR (index, deaths, failures, viable)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/viv/image_C_viv_pretty_*.png  — Image-C-style ViV forecast (bars + lines)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/demography  — Demography plots (age-band lines, heatmap)
+02:47:06 | INFO     |   runs/model_v12_singapore/2026-01-29-024632_singapore_external_projection/figures/risks  — Risk plots (heatmaps and bar charts)
