@@ -1,5 +1,9 @@
 simulation_run_v1/runs/
 emails/
 
+
+
+
+# Make exceptions for the latest runs
 !simulation_run_v1/runs/model_v12_korea/2026-01-30-014454_korea_unified_pipeline
 !simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline
