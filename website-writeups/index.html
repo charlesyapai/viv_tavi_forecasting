@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ViV-TAVI Forecasting Reports</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: #f5f5f7;
+        color: #1d1d1f;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+      }
+      .card h2 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .card p {
+        color: #666;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ViV-TAVI Forecasting Reports</h1>
+
+    <a href="viewer.html?config=configs/korea.json">
+      <div class="card">
+        <h2>🇰🇷 Korea Model</h2>
+        <p>
+          View the unified projection timeline and Monte Carlo simulation
+          results for Korea.
+        </p>
+      </div>
+    </a>
+
+    <a href="viewer.html?config=configs/singapore.json">
+      <div class="card">
+        <h2>🇸🇬 Singapore Model</h2>
+        <p>
+          View the unified projection timeline and Monte Carlo simulation
+          results for Singapore.
+        </p>
+      </div>
+    </a>
+  </body>
+</html>
