@@ -1,7 +1,7 @@
 {
     "title": "Singapore ViV-TAVI Projections (Unified)",
     "description": "Comprehensive forecast including Index Procedure projections (Step 1-6) and downstream Monte Carlo Valve-in-Valve simulations.",
-    "basePath": "../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-020036_singapore_unified_pipeline",
+    "basePath": "assets/singapore_run",
     "sections": [
         {
             "header": "1. Index Model: Data Overview",
