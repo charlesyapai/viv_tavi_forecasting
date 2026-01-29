@@ -1,2 +1,6 @@
-simulation_run_v1/runs/
-emails/
+# Main directories
+*emails/
+runs/
+
+
+

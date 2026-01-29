@@ -1,0 +1,121 @@
+:root {
+  --bg-color: #f8f9fa;
+  --text-color: #1a1a1a;
+  --card-bg: #ffffff;
+  --accent-color: #2563eb;
+  --border-color: #e5e7eb;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+header {
+  margin-bottom: 60px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  color: #111;
+  letter-spacing: -0.02em;
+}
+
+#experiment-description {
+  font-size: 1.1rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.result-block {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-bottom: 40px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease;
+}
+
+.result-block:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.block-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: #fff;
+}
+
+.block-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.block-content {
+  padding: 32px;
+  text-align: center;
+  background-color: #fafafa;
+}
+
+.result-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.caption {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: #555;
+  text-align: left;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .block-header {
+    padding: 20px;
+  }
+
+  .block-content {
+    padding: 20px;
+  }
+}
+
+.text-content {
+    font-size: 1rem;
+    color: #333;
+    text-align: left;
+    margin-bottom: 20px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}

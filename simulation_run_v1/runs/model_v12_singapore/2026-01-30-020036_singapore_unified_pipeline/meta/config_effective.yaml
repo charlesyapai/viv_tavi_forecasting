@@ -1,0 +1,152 @@
+experiment_name: model_v12_singapore
+scenario_tag: singapore_external_projection
+years:
+  end: 2050
+  simulate_from: 2022
+procedure_counts:
+  redo_savr: data/singapore_registry_redo_savr.csv
+  savr: data/singapore_registry_savr.csv
+  tavi: data/singapore_registry_tavi.csv
+index_projection:
+  tavi:
+    method: external
+    window: 5
+    constant: null
+    pop_rate: null
+    external_file: /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-020036_singapore_unified_pipeline/index_projections/final_calculation_report.csv
+    external_col: pred_TAVI
+  savr:
+    method: external
+    window: 5
+    constant: null
+    pop_rate: null
+    external_file: /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-020036_singapore_unified_pipeline/index_projections/final_calculation_report.csv
+    external_col: pred_SAVR
+volume_extrapolation: null
+open_age_bin_width: 20
+age_bins:
+- 60
+- 65
+- 70
+- 75
+- 80
+- 85
+- 90
+- 95
+durability:
+  savr_bioprosthetic:
+    gte70:
+      mean: 17.0
+      sd: 5.0
+      weight: 1.0
+    lt70:
+      mean: 10.0
+      sd: 5.0
+      weight: 1.0
+  tavi:
+    early:
+      mean: 4.0
+      sd: 1.5
+      weight: 0.2
+    late:
+      mean: 11.5
+      sd: 3.5
+      weight: 0.8
+survival_curves:
+  int_high_risk:
+    median: 6.0
+    sd: 2.0
+  low_risk:
+    median: 11.0
+    sd: 3.0
+risk_model:
+  categories: 2
+  use_age_hazard: true
+risk_mix:
+  savr:
+    ih: 0.15
+    low: 0.85
+  tavi:
+    2014-2018:
+      ih: 1.0
+      low: 0.0
+    2019-2024:
+      ih: 0.67
+      low: 0.33
+    2025-2035:
+      ih: 0.5
+      low: 0.5
+age_hazard:
+  hr_per5:
+    intermediate: 0.95
+    low: 0.9
+  ref_age: 75
+penetration:
+  tavi_in_savr:
+    '2022': 0.6
+    '2035': 0.8
+  tavi_in_tavi:
+    '2022': 0.1
+    '2035': 0.6
+redo_rates:
+  savr_after_savr: 0.0
+  savr_after_tavi: 0.0
+simulation:
+  jitter:
+    durability_pct_sd: 7.5
+    penetration_pct_sd: 10.0
+    survival_pct_sd: 5.0
+  min_dur_years: 1.0
+  n_runs: 100
+  progress_every: 10
+  rng_seed: 2025
+  verbose: true
+outputs:
+  root: runs
+population_projection:
+  age_col: age
+  path: derived/age_projections_by_year_age_allsex.csv
+  pop_col: population
+  year_col: year
+redo_savr_numbers: null
+precompute:
+  enabled: true
+  active_country: singapore
+  un_population_paths:
+    korea_female: data/un_population_data/Population Projections - Female, Korea.csv
+    korea_male: data/un_population_data/Population Projections - Male, Korea.csv
+    singapore_female: data/un_population_data/Population Projections - Female, Singapore.csv
+    singapore_male: data/un_population_data/Population Projections - Male, Singapore.csv
+  units_multiplier: 1000.0
+  risk_years:
+  - 2023
+  - 2024
+  risk_rule: avg_2023_2024
+  project_years:
+  - 2022
+  - 2050
+  open_age_bin_width: 20
+  derived_dir: derived
+  build_redo_savr_targets: true
+figure_ranges:
+  focus_band:
+  - 2025
+  - 2035
+  index_projection_years:
+  - 2025
+  - 2035
+  viv_years:
+  - 2022
+  - 2050
+  waterfall_years:
+  - 2025
+  - 2030
+  - 2035
+  x_axis:
+  - 2022
+  - 2050
+plotting:
+  background: light
+  viv_total_bar_color: null
+  label_bars: true
+  image_c_source: post

@@ -1,0 +1,57 @@
+{
+    "title": "Singapore ViV-TAVI Projections (Unified)",
+    "description": "Comprehensive forecast including Index Procedure projections (Step 1-6) and downstream Monte Carlo Valve-in-Valve simulations.",
+    "basePath": "../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-020036_singapore_unified_pipeline",
+    "sections": [
+        {
+            "header": "1. Index Model: Data Overview",
+            "image": "index_projections/step1_data_overview.png",
+            "caption": "Overview of historical procedure volumes and demographic trends."
+        },
+        {
+            "header": "2. Index Model: Normalization",
+            "image": "index_projections/step2_normalization_effect.png",
+            "caption": "Redistribution of pandemic-era volumes (2020-2023) to smooth trends."
+        },
+        {
+            "header": "3. Index Model: Risk Trends",
+            "image": "index_projections/step3_projected_risk_trends.png",
+            "caption": "Age-stratified risk projections using logarithmic fitting."
+        },
+        {
+            "header": "4. Index Model: TAM",
+            "image": "index_projections/step4_projected_tam.png",
+            "caption": "Projection of the total addressable market based on demographic shifts."
+        },
+        {
+            "header": "5. Index Model: TAVI Adoption",
+            "image": "index_projections/step5_tavi_share_fit.png",
+            "caption": "Sigmoid fit of TAVI as a proportion of TAM (Max 50%)."
+        },
+        {
+            "header": "6. Index Model: Final Procedure Forecast",
+            "image": "index_projections/step6_final_projection.png",
+            "caption": "Final forecast of TAVI and SAVR volumes (fed into Monte Carlo)."
+        },
+        {
+            "header": "7. MC Sim: Demographic Trends",
+            "image": "figures/demography/demography_summary_trends.png",
+            "caption": "Projected population trends used in the simulation."
+        },
+        {
+            "header": "8. MC Sim: Population by Age Group",
+            "image": "figures/demography/age_projection_lines_Combined.png",
+            "caption": "Detailed age group projections."
+        },
+        {
+            "header": "9. MC Sim: Historical Adoption Check",
+            "image": "figures/index/historical_adoption.png",
+            "caption": "Comparing model inputs against historical data verification."
+        },
+        {
+            "header": "10. MC Sim: ViV Candidates vs Realized",
+            "image": "figures/viv/image_D_viv_candidates_vs_realized_2022_2050.png",
+            "caption": "Projected pool of viable candidates vs realized Valve-in-Valve procedures."
+        }
+    ]
+}
