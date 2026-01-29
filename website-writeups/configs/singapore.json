@@ -1,7 +1,7 @@
 {
     "title": "Singapore ViV-TAVI Projections (Unified)",
     "description": "Comprehensive forecast including Index Procedure projections (Step 1-6) and downstream Monte Carlo Valve-in-Valve simulations.",
-    "basePath": "../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline",
+    "basePath": "../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-020036_singapore_unified_pipeline",
     "sections": [
         {
             "header": "1. Index Model: Data Overview",
@@ -25,7 +25,7 @@
         },
         {
             "header": "5. Index Model: TAVI Adoption",
-            "image": "index_projections/step5_tavi_sigmoid_fit.png",
+            "image": "index_projections/step5_tavi_share_fit.png",
             "caption": "Sigmoid fit of TAVI as a proportion of TAM (Max 50%)."
         },
         {

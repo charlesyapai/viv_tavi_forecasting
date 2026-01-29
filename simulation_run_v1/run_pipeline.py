@@ -64,10 +64,14 @@ def main():
     cmd_index = [
         "python", model_script,
         "--out-dir", str(index_out_dir.absolute()),
-        "--start-year", str(args.start_year),
-        "--sigmoid-mode", str(args.sigmoid_mode),
-        "--fixed-midpoint-val", str(args.fixed_midpoint_val)
+        "--start-year", str(args.start_year)
     ]
+    
+    if args.country == "korea":
+        cmd_index.extend([
+            "--sigmoid-mode", str(args.sigmoid_mode),
+            "--fixed-midpoint-val", str(args.fixed_midpoint_val)
+        ])
     
     run_command(cmd_index, cwd=str(base_dir))
     log.info(f"Index projections saved to {index_out_dir}")
