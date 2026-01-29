@@ -1,0 +1,131 @@
+# -----------------------------------------------------------------------------
+# model_v10_configs.yaml — Demography-anchored ViV forecast (UN Data Source)
+# -----------------------------------------------------------------------------
+
+experiment_name: model_v10_un_data
+scenario_tag: korea_un_projection
+
+years:
+  simulate_from: 2022
+  end: 2050
+
+# Observed registry counts (Replace with your actual files)
+procedure_counts:
+  tavi: data/registry_tavi.csv
+  savr: data/registry_savr.csv
+  redo_savr: data/registry_redo_savr.csv
+
+# ————————————————————————————————————————————————————————————————————————
+# v10 PRECOMPUTE: UN Data Ingestion
+# ————————————————————————————————————————————————————————————————————————
+precompute:
+  enabled: true
+
+  # TOGGLE THIS: "korea" or "singapore"
+  active_country: "korea"
+
+  un_population_paths:
+    korea_male: "simulation_run_v1/data/un_population_data/Population Projections - Male, Korea.csv"
+    korea_female: "simulation_run_v1/data/un_population_data/Population Projections - Female, Korea.csv"
+    singapore_male: "simulation_run_v1/data/un_population_data/Population Projections - Male, Singapore.csv"
+    singapore_female: "simulation_run_v1/data/un_population_data/Population Projections - Female, Singapore.csv"
+
+  # UN data usually uses "1" to represent "1,000" people.
+  # If your CSV says "803" for 0-4 year olds, that is 803k. Use 1000.0.
+  units_multiplier: 1000.0
+
+  risk_years: [2022, 2023, 2024]
+  risk_rule: avg_2023_2024
+  project_years: [2020, 2050]
+  derived_dir: derived
+  build_redo_savr_targets: true
+
+# ————————————————————————————————————————————————————————————————————————
+# Index projection
+# ————————————————————————————————————————————————————————————————————————
+index_projection:
+  tavi:
+    method: population_rate
+    pop_rate:
+      obs_years: "2023-2024"
+      min_age: 50
+  savr:
+    method: population_rate
+    pop_rate:
+      obs_years: "2023-2024"
+      min_age: 50
+
+# Injection placeholders (Do not change)
+population_projection:
+  path: derived/age_projections_by_year_age_allsex.csv
+  year_col: year
+  age_col: age
+  pop_col: population
+
+# ————————————————————————————————————————————————————————————————————————
+# Simulation Parameters
+# ————————————————————————————————————————————————————————————————————————
+open_age_bin_width: 20
+age_bins: [60, 65, 70, 75, 80, 85, 90, 95]
+
+durability:
+  tavi:
+    early: { mean: 4.0, sd: 1.5, weight: 0.2 }
+    late: { mean: 11.5, sd: 3.5, weight: 0.8 }
+  savr_bioprosthetic:
+    lt70: { mean: 10.0, sd: 5.0, weight: 1.0 }
+    gte70: { mean: 17.0, sd: 5.0, weight: 1.0 }
+
+survival_curves:
+  low_risk: { median: 11.0, sd: 3.0 }
+  int_high_risk: { median: 6.0, sd: 2.0 }
+
+risk_model:
+  categories: 2
+  use_age_hazard: true
+
+age_hazard:
+  ref_age: 75
+  hr_per5:
+    low: 0.90
+    intermediate: 0.95
+
+risk_mix:
+  tavi:
+    "2014-2018": { low: 0.0, ih: 1.0 }
+    "2019-2024": { low: 0.33, ih: 0.67 }
+    "2025-2035": { low: 0.50, ih: 0.50 }
+  savr: { low: 0.85, ih: 0.15 }
+
+penetration:
+  tavi_in_tavi: { "2022": 0.10, "2035": 0.60 }
+  tavi_in_savr: { "2022": 0.60, "2035": 0.80 }
+
+redo_rates:
+  savr_after_savr: 0.00
+  savr_after_tavi: 0.00
+
+simulation:
+  n_runs: 30
+  rng_seed: 2025
+  min_dur_years: 1.0
+  verbose: true
+  progress_every: 10
+  jitter:
+    durability_pct_sd: 7.5
+    survival_pct_sd: 5.0
+    penetration_pct_sd: 10.0
+
+plotting:
+  background: light
+  image_c_source: post
+  label_bars: true
+
+figure_ranges:
+  x_axis: [2020, 2050]
+  focus_band: [2025, 2035]
+  index_projection_years: [2025, 2035]
+  waterfall_years: [2025, 2030, 2035]
+  viv_years: [2020, 2050]
+
+outputs: { root: runs }

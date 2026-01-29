@@ -1,0 +1,32 @@
+15:28:29 | INFO     | Outputs will be stored under runs/model_v10_un_data/2025-12-04-152829_korea_un_projection
+15:28:29 | INFO     | Pre-compute enabled: building age/sex population, risk scores, redo targets.
+15:28:29 | INFO     | Built population files from UN data (Years 2020-2050)
+15:28:29 | INFO     | Built index projection: TAVI rows 386, SAVR rows 575
+15:28:30 | INFO     | Demography figures stored under runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/demography
+15:28:30 | INFO     | Risk figures stored under runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/risks
+15:28:30 | INFO     | TAVI rows 386, SAVR rows 575 (observed + projection)
+15:28:31 | INFO     | Run 1/30: realized ViV — TAVR-in-SAVR=13381, TAVR-in-TAVR=6624
+15:28:35 | INFO     | Run 11/30: realized ViV — TAVR-in-SAVR=16026, TAVR-in-TAVR=7697
+15:28:39 | INFO     | Run 21/30: realized ViV — TAVR-in-SAVR=19799, TAVR-in-TAVR=9893
+15:28:42 | INFO     | Run 30/30: realized ViV — TAVR-in-SAVR=17617, TAVR-in-TAVR=8802
+15:28:43 | INFO     | Tables (CSV):
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/index/tavi_with_projection.csv  — TAVI index volumes (year × age_band × sex × src)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/index/savr_with_projection.csv  — SAVR index volumes (year × age_band × sex × src)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/flow/patient_flow_mean.csv  — Mean patient flow per year (index_cnt, deaths, failures, viable)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/viv/viv_candidates_totals.csv  — ViV candidates (mean ± SD across runs, by year × viv_type)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/viv/viv_candidates_v5like.csv  — v5-style candidate totals (mean of bins, QA only)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/viv/viv_forecast.csv  — ViV realized (mean ± SD across runs)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/tables/viv/viv_forecast_realized.csv  — ViV realized after redo-SAVR subtraction
+15:28:43 | INFO     | QC tables:
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/qc/index_projection/tavi_index_projection_*  — TAVI index projection slice
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/qc/index_projection/savr_index_projection_*  — SAVR index projection slice
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/qc/redo/redo_savr_qc.csv  — Redo-SAVR reconciliation (before/after subtraction)
+15:28:43 | INFO     | Figures (PNG):
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/index/image_A_tavi_index.png  — TAVI index: observed vs projected
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/index/image_B_savr_index.png  — SAVR index: observed vs projected
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/index/index_volume_overlay.png  — TAVI vs SAVR index overlay
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/flow/flow_tavi.png  — Flow diagram for TAVI (index, deaths, failures, viable)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/flow/flow_savr.png  — Flow diagram for SAVR (index, deaths, failures, viable)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/viv/image_C_viv_pretty_*.png  — Image-C-style ViV forecast (bars + lines)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/demography  — Demography plots (age-band lines, heatmap)
+15:28:43 | INFO     |   runs/model_v10_un_data/2025-12-04-152829_korea_un_projection/figures/risks  — Risk plots (heatmaps and bar charts)
