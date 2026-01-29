@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Projection (Singapore) | ViV-TAVI Forecasting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../projecting_index_procedures/styles.css">
+    
+    <!-- MathJax for rendering equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="layout-wrapper">
+        <aside class="sidebar">
+            <nav class="toc">
+                <h3>Contents</h3>
+                <ul>
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#methodology">Methodology</a></li>
+                    <li><a href="#demography">Demographic Driver</a></li>
+                    <li><a href="#input-data">Index Procedure Inputs</a></li>
+                    <li><a href="#results">Projection Results</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="container">
+            <header>
+                <h1>Monte Carlo Projection of ViV-TAVI (Singapore)</h1>
+                <p>Simulation of long-term Valve-in-Valve (ViV) demand based on patient-level survival, valve durability, and demographic shifts.</p>
+            </header>
+
+            <section id="overview" class="section">
+                <h2>Overview</h2>
+                <p>Following the index procedure projection (Step 1), we employ a stochastic Monte Carlo simulation to forecast the downstream demand for Valve-in-Valve (ViV) procedures. This approach explicitly models the "competing risks" of patient mortality vs. valve failure.</p>
+                <p><strong>Key Mechanism:</strong> A patient treated today (Index TAVI or SAVR) only generates a ViV inputs <em>if and only if</em> they survive longer than their valve's durability.</p>
+            </section>
+
+            <section id="methodology" class="section">
+                <h2>Methodology</h2>
+                <p>The simulation runs 100+ iterations to generate probabilistic bounds. The core logic for each iteration is as follows:</p>
+
+                <h3>1. Patient Sampling</h3>
+                <p>For every forecasted year \(t\) and procedure type (TAVI/SAVR), we generate a cohort of \(N\) virtual patients based on the projected volumes from the Index Model.</p>
+
+                <h3>2. Attribute Assignment</h3>
+                <ul>
+                    <li><strong>Age:</strong> Sampled from the age distribution specific to that year and procedure type (derived from registry data).</li>
+                    <li><strong>Risk Profile:</strong> Patients are assigned a risk category (Low, Intermediate, High) based on configured probability mixes.</li>
+                </ul>
+
+                <h3>3. Event Simulation</h3>
+                <p>For each patient, we independently sample two critical time-to-event variables:</p>
+                <ul>
+                    <li><strong>Time to Death (\(T_{death}\)):</strong> Sampled from age- and risk-adjusted Actuarial Life Tables (Gompertz-Makeham models calibrated to country-specific UN mortality data).</li>
+                    <li><strong>Time to Valve Failure (\(T_{fail}\)):</strong> Sampled from valve durability curves (e.g., Weibull or Log-Normal distributions defined in the literature).</li>
+                </ul>
+
+                <h3>4. Viability Check</h3>
+                <p>A "Viable Candidate" for ViV is generated if:</p>
+                <div class="math-block">
+                    $$ T_{fail} \le T_{death} $$
+                </div>
+                <p>and the failure occurs within the simulation window (2025–2050).</p>
+
+                <h3>5. Realization (Penetration)</h3>
+                <p>Not all candidate failures result in a procedure. The final "Realized" volume is calculated by applying a <strong>Penetration Rate</strong> (representing clinical decision-making and referral pathways) and subtracting patients who undergo Redo-SAVR instead of ViV.</p>
+            </section>
+
+            <section id="demography" class="section">
+                <h2>Demographic Driver</h2>
+                <p>The simulation integrates the UN Population Projections directly. As the population ages, the "risk pool" for index procedures grows, but the extracted <em>survival time</em> for older patients decreases, creating a complex dynamic between volume growth and ViV candidature.</p>
+                
+                <figure>
+                    <!-- Pointing to the artifacts from the run -->
+                    <img src="../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/demography/demography_summary_trends.png" alt="Demography Summary Trends">
+                    <figcaption>Figure 1: Projected population trends driving the simulation.</figcaption>
+                </figure>
+
+                <figure>
+                    <img src="../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/demography/age_projection_lines_Combined.png" alt="Age Projection Lines">
+                    <figcaption>Figure 2: Detailed breakout of age cohorts (55-59 through 85+) over time.</figcaption>
+                </figure>
+            </section>
+
+            <section id="input-data" class="section">
+                <h2>Index Procedure Inputs</h2>
+                <p>The Monte Carlo engine intakes the "official" index projections generated in the previous step. This ensures consistency between the market-sizing model and the downstream simulation.</p>
+
+                <figure>
+                    <img src="../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/index/historical_adoption.png" alt="Historical Adoption">
+                    <figcaption>Figure 3: Historical and projected index volumes fed into the simulation.</figcaption>
+                </figure>
+            </section>
+
+            <section id="results" class="section">
+                <h2>Projection Results: Candidates vs. Realized</h2>
+                <p>The plot below illustrates the "Funnel" of demand. The <strong>Candidate</strong> pool represents the biological potential (living patients with failed valves). The <strong>Realized</strong> bars represent the forecasted clinical procedures after accounting for diagnosis rates and treatment decisions.</p>
+
+                <figure>
+                    <img src="../../simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/viv/image_D_viv_candidates_vs_realized_2022_2050.png" alt="ViV Candidates vs Realized">
+                    <figcaption>Figure 4: The "ViV Gap" – Candidates (Lines) vs. Realized Procedures (Bars).</figcaption>
+                </figure>
+            </section>
+
+             <a href="../projecting_index_procedures/singapore.html" class="nav-button">
+                &larr; Back to Index Projections
+            </a>
+
+        </main>
+    </div>
+</body>
+</html>

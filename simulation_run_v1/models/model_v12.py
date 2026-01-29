@@ -3002,28 +3002,19 @@ def main():
     p.add_argument("--log-level", default="INFO")
     p.add_argument("--precompute-only", action="store_true",
                    help="Run demography + risk pre-compute and exit.")
-<<<<<<< Updated upstream
     p.add_argument("--override-out-dir", type=str, default=None,
                    help="Override default timestamped output directory.")
-=======
->>>>>>> Stashed changes
     args = p.parse_args()
 
     raw_cfg_text = Path(args.config).read_text(encoding="utf-8")
     cfg = Config.model_validate(yaml.safe_load(raw_cfg_text))
 
-<<<<<<< Updated upstream
     if args.override_out_dir:
         out_root = Path(args.override_out_dir)
     else:
         ts = dt.now().strftime("%Y-%m-%d-%H%M%S")
         tag = f"_{cfg.scenario_tag}" if cfg.scenario_tag else ""
         out_root = Path("runs") / cfg.experiment_name / f"{ts}{tag}"
-=======
-    ts = dt.now().strftime("%Y-%m-%d-%H%M%S")
-    tag = f"_{cfg.scenario_tag}" if cfg.scenario_tag else ""
-    out_root = Path("runs") / cfg.experiment_name / f"{ts}{tag}"
->>>>>>> Stashed changes
 
     dirs = Dirs(out_root)
     dirs.make_all()

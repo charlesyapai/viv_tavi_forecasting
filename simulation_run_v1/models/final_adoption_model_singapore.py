@@ -16,18 +16,13 @@ def sigmoid(x, L, k, x0):
 
 def load_raw_wide_data(base_path):
     # Reads the raw wide CSVs (Sex, Age group, 2012...2024) and melts them
-<<<<<<< Updated upstream
-    tavi_raw = base_path / "simulation_run_v1/data/raw/singapore_registry_tavi.csv"
-    savr_raw = base_path / "simulation_run_v1/data/raw/singapore_registry_savr.csv"
+    tavi_raw = base_path / "simulation_run_v1/data/singapore_registry_tavi.csv"
+    savr_raw = base_path / "simulation_run_v1/data/singapore_registry_savr.csv"
     
     if not tavi_raw.exists():
         # Fallback to absolute path hardcoded for this environment
-        tavi_raw = Path("/Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/data/raw/singapore_registry_tavi.csv")
-        savr_raw = Path("/Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/data/raw/singapore_registry_savr.csv")
-=======
-    tavi_raw = base_path / "simulation_run_v1/data/singapore_registry_tavi.csv"
-    savr_raw = base_path / "simulation_run_v1/data/singapore_registry_savr.csv"
->>>>>>> Stashed changes
+        tavi_raw = Path("/Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/data/singapore_registry_tavi.csv")
+        savr_raw = Path("/Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/data/singapore_registry_savr.csv")
     
     def process_wide(file_path):
         df = pd.read_csv(file_path)
@@ -110,16 +105,8 @@ def load_data():
     if not hosp_path.exists():
         hosp_path = base / "data/raw/TAVI_adoption_hospital_numbers_singapore"
         if not hosp_path.exists():
-             # If no specific Singapore hospital file, we might skip or use a default. 
-             # For now let's assume it might not exist and handle graceful failure if used, 
-             # OR if the user doesn't have it, we might need to suppress hosp_df usage if it's not critical.
-             # Looking at the code, hosp_df is loaded but seemingly ONLY used if we do something with it. 
-             # The main logic uses tavi_df, savr_df, pop. 
-             # Wait, the main function loads it: tavi_df, savr_df, hosp_df, pop_raw = load_data()
-             # checking main usage... it is NOT used in the provided snippet of main().
-             # So I will just point it to a non-existent path that warns or just leave it.
-             pass
-        hosp_path = base / "data/raw/TAVI_adoption_hospital_numbers_korea"
+             # Fallback to absolute path for Korea data as found in project root
+             hosp_path = Path("/Users/charles/Desktop/viv_tavi_forecasting/data/raw/TAVI_adoption_hospital_numbers_korea")
 
     hosp_df = pd.read_csv(hosp_path)
     
@@ -163,7 +150,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     
 
-def project_risk_logarithmic(years, past_rates):
+def project_risk_logarithmic(years, past_rates, prediction_years):
     # Fit a logarithmic curve to valid historical rates to capture "diminishing returns" growth
     # Rate = a + b * ln(year - offset)
     # This naturally slows down growth, preventing explosion to infinity.
@@ -173,7 +160,7 @@ def project_risk_logarithmic(years, past_rates):
             valid_y.append(y)
             valid_r.append(r)
             
-    if len(valid_y) < 3: return [np.mean(valid_r)] * len(years) # Fallback
+    if len(valid_y) < 3: return [np.mean(valid_r)] * len(prediction_years) # Fallback
     
     def log_func(t, a, b):
         return a + b * np.log(t - 2010)
@@ -181,11 +168,10 @@ def project_risk_logarithmic(years, past_rates):
     try:
         popt, _ = curve_fit(log_func, valid_y, valid_r, maxfev=10000)
         # Project forward
-        future_y = np.arange(2012, 2051)
-        future_r = log_func(future_y, *popt)
+        future_r = log_func(prediction_years, *popt)
         return future_r
     except:
-        return [np.mean(valid_r)] * 39 # Fallback
+        return [np.mean(valid_r)] * len(prediction_years) # Fallback
 
 
 def normalize_series_redistribution(years, values, label="Data"):
@@ -272,10 +258,8 @@ def main():
     # UPDATE: New default output directory
     parser.add_argument("--out-dir", default="/Users/charles/Desktop/viv_tavi_forecasting/writeups-thoughts/projecting_index_procedures/singapore_report")
     parser.add_argument("--center-cap", type=int, default=94, help="Max number of centers")
-<<<<<<< Updated upstream
     parser.add_argument("--start-year", type=int, default=2012, help="Start year for analysis (inclusive)")
-=======
->>>>>>> Stashed changes
+    parser.add_argument("--tavi-max-share", type=float, default=0.5, help="Max TAVI share of TAM (0.0 to 1.0)")
     args = parser.parse_args()
     
     out_dir = Path(args.out_dir)
@@ -285,11 +269,7 @@ def main():
     pop_mapped = align_ages(pop_raw)
     
     years = sorted(list(set(tavi_df['year']) | set(savr_df['year'])))
-<<<<<<< Updated upstream
     years = [y for y in years if y <= 2024 and y >= args.start_year] 
-=======
-    years = [y for y in years if y <= 2024] 
->>>>>>> Stashed changes
     
 
     # DEBUG: Print Raw Sums to check 2015 and 2024
@@ -312,13 +292,8 @@ def main():
     # ==========================================
     
     # 1. Bar Chart Data (TAVI/SAVR)
-<<<<<<< Updated upstream
     # Ensure we cover up to 2024, respecting start_year
     X_bar = sorted([y for y in combined_sums.index if args.start_year <= y <= 2024])
-=======
-    # Ensure we cover up to 2024
-    X_bar = sorted([y for y in combined_sums.index if 2012 <= y <= 2024])
->>>>>>> Stashed changes
     Y_tavi_bar = [tavi_sums.get(y, 0) for y in X_bar]
     Y_savr_bar = [savr_sums.get(y, 0) for y in X_bar]
     
@@ -330,11 +305,7 @@ def main():
     bands_mid = ['50-54', '55-59', '60-64', '65-69', '70-74', '75-79']
     bands_high = ['>=80']
     
-<<<<<<< Updated upstream
     pop_years = sorted([y for y in pop_mapped.index if args.start_year <= y <= 2050])
-=======
-    pop_years = sorted([y for y in pop_mapped.index if 2012 <= y <= 2050])
->>>>>>> Stashed changes
     pop_mid_series = []
     pop_high_series = []
     
@@ -388,11 +359,7 @@ def main():
     
     # Refined Step 2 Plot
     fig_norm, ax_norm = plt.subplots(figsize=(10, 6))
-<<<<<<< Updated upstream
     ax_norm.plot(X_comb, Y_comb_raw, 'k--', label=f"Raw Observed Data ({args.start_year}-2024)", alpha=0.6)
-=======
-    ax_norm.plot(X_comb, Y_comb_raw, 'k--', label="Raw Observed Data (2012-2024)", alpha=0.6)
->>>>>>> Stashed changes
     ax_norm.scatter(X_comb, Y_comb_raw, color='black', alpha=0.4)
     ax_norm.plot(X_comb, Y_comb_norm, 'b-', label="Normalized Trend (Volume Preserved)", linewidth=2.5)
     ax_norm.scatter(X_comb, Y_comb_norm, color='blue', zorder=5)
@@ -422,11 +389,7 @@ def main():
 
     risk_rates_norm = {y: {} for y in years}
     future_risks_dict = {} 
-<<<<<<< Updated upstream
     proj_years_full = np.arange(args.start_year, 2051)
-=======
-    proj_years_full = np.arange(2012, 2051)
->>>>>>> Stashed changes
     
     fig_risk, ax_risk = plt.subplots(figsize=(10, 6))
     for b in bands:
@@ -435,7 +398,7 @@ def main():
         val_norm, _ = normalize_series_redistribution(y_series, val_series, label=f"Risk {b}")
         for i, y in enumerate(years): risk_rates_norm[y][b] = val_norm[i]
         
-        future_r_curve = project_risk_logarithmic(y_series, val_norm)
+        future_r_curve = project_risk_logarithmic(y_series, val_norm, proj_years_full)
         future_risks_dict[b] = future_r_curve
         
         p = ax_risk.plot(proj_years_full, future_r_curve * 100000, label=f"Age {b}")
@@ -492,203 +455,172 @@ def main():
     plt.savefig(out_dir / "step4_projected_tam.png", dpi=150)
     
     # ==========================================
-    # === STEP 5: TAVI ADOPTION (VARIANT: DEMOGRAPHICS + SIGMOID) ===
+    # === STEP 5: TAVI ADOPTION (VARIANT: PROPORTION OF TAM) ===
     # ==========================================
-    # 1. Prepare TAVI Data & Apply Redistribution (Step 1 of Variant)
+    
+    # 0. Define Configuration for Max Share
+    tavi_max_share = 0.5 # Default 50%
+    if hasattr(args, 'tavi_max_share'):
+       tavi_max_share = args.tavi_max_share
+
+    log.info(f"Targeting Max TAVI Share of TAM = {tavi_max_share:.2%}")
+
+    # 1. Calculate Historical TAM & TAVI Share
     # ---------------------------------------------------------
+    # Re-calculate TAVI Totals and Normalized Series (needed for share calc)
     tavi_tot = tavi_df.groupby("year")["count"].sum()
     X_tavi = sorted([y for y in tavi_tot.index if y <= 2024])
     Y_tavi_raw_vals = [tavi_tot[y] for y in X_tavi]
     
     Y_tavi_norm, norm_map = normalize_series_redistribution(X_tavi, Y_tavi_raw_vals, label="TAVI History")
-    
-    # Plot Variant Step 1: Redistribution
-    fig_v1, ax_v1 = plt.subplots(figsize=(10, 6))
-    ax_v1.plot(X_tavi, Y_tavi_raw_vals, 'k--', label="Raw TAVI", alpha=0.5)
-    ax_v1.scatter(X_tavi, Y_tavi_raw_vals, color='black', alpha=0.3)
-    ax_v1.plot(X_tavi, Y_tavi_norm, 'b-', label="Redistributed TAVI (2020-2023)", lw=2)
-    ax_v1.axvspan(2019.5, 2023.5, color='orange', alpha=0.1, label="Redistribution Window")
-    ax_v1.set_title("Step 5.1: Volume-Preserved Redistribution (TAVI Only)")
-    ax_v1.legend()
-    ax_v1.grid(True, alpha=0.3)
-    plt.savefig(out_dir / "step5_tavi_redistribution.png", dpi=150)
-    plt.close()
-    
-    # 2. Demographic Normalization (Step 2 of Variant)
-    # ---------------------------------------------------------
-    # Goal: Calculate "Adjusted Volume" as if population structure was fixed at 2024
-    scale_factors = {}
-    for y, count in zip(X_tavi, Y_tavi_raw_vals):
-        norm_val = norm_map.get(y, count)
-        scale_factors[y] = norm_val / count if count > 0 else 1.0
-        
-    ref_pop_year = 2024
-    ref_pop = pop_mapped.loc[ref_pop_year]
-    
-    adj_vol_series = []
-    
-    for y in X_tavi:
-        # Get Raw Age Counts
-        y_rows = tavi_df[tavi_df['year'] == y]
-        row_pop = pop_mapped.loc[y]
-        
-        adj_sum = 0
-        for b in bands:
-            raw_c = y_rows[y_rows['age_band'] == b]['count'].sum()
-            # Apply redistribution scale
-            norm_c = raw_c * scale_factors.get(y, 1.0)
-            pop_c = row_pop.get(b, 1) # Avoid div by zero
-            
-            rate = norm_c / pop_c
-            # Apply to Ref Population
-            adj_sum += rate * ref_pop.get(b, 0)
-            
-        adj_vol_series.append(adj_sum)
-        
-    # Plot Variant Step 2: Demographic Adjustment
-    fig_v2, ax_v2 = plt.subplots(figsize=(10, 6))
-    ax_v2.plot(X_tavi, Y_tavi_norm, 'b--', label="Redistributed Volume (Actual Pop)", alpha=0.6)
-    ax_v2.plot(X_tavi, adj_vol_series, 'g-', label="Demographically Adjusted (Fixed 2024 Pop)", lw=2)
-    ax_v2.set_title("Step 5.2: Correction for Population Growth/Aging")
-    ax_v2.legend()
-    ax_v2.grid(True, alpha=0.3)
-    plt.savefig(out_dir / "step5_demographic_adjustment.png", dpi=150)
-    plt.close()
 
-    # 3. Sigmoid Projection (Step 3 of Variant) - Midpoint 2023
-    # ---------------------------------------------------------
-    # Fit Sigmoid to AdjVol, x0 fixed at 2023
-    def sigmoid_constrained(x, L, k):
-        return L / (1 + np.exp(-k * (x - 2023)))
+    # We need TAM for historical years to get the denominator.
+    # TAM(y) = Sum_ages( Population(y, age) * Risk(y, age) )
+    # But wait, we used *Predicted* Risk for future TAM.
+    # For historical TAM, we should use the same Risk model (smoothed) or Raw?
+    # Using the smoothed Risk model (log fit) is better to suppress noise in the denominator.
     
-    max_vol = max(adj_vol_series)
-    try:
-        popt_s, _ = curve_fit(sigmoid_constrained, X_tavi, adj_vol_series, 
-                            p0=[max_vol*2, 0.2], 
-                            bounds=([max_vol, 0.01], [max_vol*10, 2.0]),
-                            maxfev=5000)
-    except Exception as e:
-        log.error(f"Curve fit failed: {e}")
-        popt_s = [max_vol * 1.5, 0.1]
+    hist_years = sorted([y for y in tavi_tot.index if y <= 2024 and y >= 2012])
+    
+    tavi_shares = []
+    valid_hist_years = []
+    
+    # Pre-calculate risk rates dictionary for fast lookup
+    # future_risks_dict has full projection (2012-2051), indices align with proj_years_full
+    # We need to map year -> index in proj_years_full
+    year_to_idx = {y: i for i, y in enumerate(proj_years_full)}
+    
+    for y in hist_years:
+        if y not in pop_mapped.index: continue
         
-    L_fit, k_fit = popt_s
-    log.info(f"Sigmoid Fit: L={L_fit:.1f}, k={k_fit:.3f}, x0=2023 (Fixed)")
+        # Calculate TAM for this year using SMOOTHED Risk
+        # (Consistency: If we project using Smoothed Risk, we should fit against Smoothed Risk denominator)
+        tam_y = 0
+        idx = year_to_idx.get(y)
+        if idx is None: continue
+        
+        row_pop = pop_mapped.loc[y]
+        for b in bands:
+            risk_val = future_risks_dict[b][idx]
+            pop_val = row_pop.get(b, 0)
+            tam_y += risk_val * pop_val
+            
+        # Get Redistributed TAVI Vol for this year (from Step 5.1)
+        # We use strict year matching
+        tavi_vol = norm_map.get(y, tavi_tot.get(y, 0))
+        
+        if tam_y > 0:
+            share = tavi_vol / tam_y
+            tavi_shares.append(share)
+            valid_hist_years.append(y)
+            
+    # 2. Fit Sigmoid to Proportion (2016+)
+    # ---------------------------------------------------------
+    # Constrained Sigmoid: L is fixed to tavi_max_share
+    def sigmoid_fixed_L(x, k, x0):
+        return tavi_max_share / (1 + np.exp(-k * (x - x0)))
+        
+    # Filter Data for Fitting (2016 onwards)
+    fit_x = []
+    fit_y = []
+    for y, s in zip(valid_hist_years, tavi_shares):
+        if y >= 2016:
+            fit_x.append(y)
+            fit_y.append(s)
+            
+    if len(fit_x) < 3:
+        log.warning("Not enough data points >= 2016 for fit. Using all combined data.")
+        fit_x = valid_hist_years
+        fit_y = tavi_shares
+        
+    # Initial Guesses
+    # k ~ 0.2 (growth rate)
+    # x0 ~ 2022 (midpoint of transition?) - Adjusted based on data
+    p0 = [0.2, 2022]
+    bounds = ([0.01, 2000], [2.0, 2050])
     
-    pred_adj_vol = sigmoid_constrained(proj_years_full, L_fit, k_fit)
+    try:
+        popt_p, _ = curve_fit(sigmoid_fixed_L, fit_x, fit_y, p0=p0, bounds=bounds, maxfev=5000)
+    except Exception as e:
+        log.error(f"Proportion Curve fit failed: {e}")
+        popt_p = [0.1, 2025]
+        
+    k_fit, x0_fit = popt_p
+    log.info(f"Proportion Sigmoid Fit: L={tavi_max_share} (Fixed), k={k_fit:.3f}, x0={x0_fit:.1f}")
     
-    # Plot Variant Step 3: Sigmoid Fit
+    # 3. Project Future Shares & Volumes
+    # ---------------------------------------------------------
+    pred_shares = sigmoid_fixed_L(proj_years_full, k_fit, x0_fit)
+    pred_tavi_vol = []
+    pred_savr_vol = []
+    
+    for i, y in enumerate(proj_years_full):
+        tam = tam_series[i]
+        share = pred_shares[i]
+        
+        t_vol = tam * share
+        s_vol = max(0, tam - t_vol)
+        
+        pred_tavi_vol.append(t_vol)
+        pred_savr_vol.append(s_vol)
+
+    # 4. Plot Step 5: TAVI Proportion Fit
+    # ---------------------------------------------------------
     fig_v3, ax_v3 = plt.subplots(figsize=(10, 6))
-    ax_v3.plot(X_tavi, adj_vol_series, 'go', label="Historical Adjusted Vol")
-    ax_v3.plot(proj_years_full, pred_adj_vol, 'g--', label=f"Sigmoid Projection (Mid=2023, k={k_fit:.2f})")
-    ax_v3.axvline(2023, color='orange', linestyle=':', label="Midpoint (2023)")
-    ax_v3.set_title("Step 5.3: Sigmoid Projection of Demographically Adjusted Volume")
+    
+    # Plot All Historical Points (Grey for excluded, Color for included)
+    incl_x, incl_y = [], []
+    excl_x, excl_y = [], []
+    
+    for y, s in zip(valid_hist_years, tavi_shares):
+        if y >= 2016:
+            incl_x.append(y)
+            incl_y.append(s)
+        else:
+            excl_x.append(y)
+            excl_y.append(s)
+            
+    ax_v3.plot(excl_x, excl_y, 'o', color='gray', alpha=0.5, label="Historical < 2016 (Excluded)")
+    ax_v3.plot(incl_x, incl_y, 'bo', label="Historical >= 2016 (Fitted)")
+    
+    # Plot Curve
+    ax_v3.plot(proj_years_full, pred_shares, 'b-', linewidth=2, label=f"Sigmoid Projection (Max={tavi_max_share*100:.0f}%, k={k_fit:.2f})")
+    
+    # Formatting
+    ax_v3.set_ylim(0, tavi_max_share * 1.2) # Give some headroom, but focus on the transition
+    ax_v3.axhline(tavi_max_share, color='r', linestyle=':', label="Max Share Cap")
+    
+    ax_v3.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+    ax_v3.set_title("Step 5: TAVI Adoption Curve (Proportion of TAM)", fontsize=14)
+    ax_v3.set_ylabel("TAVI % of Total Index Procedures")
     ax_v3.legend()
     ax_v3.grid(True, alpha=0.3)
-    plt.savefig(out_dir / "step5_tavi_sigmoid_fit.png", dpi=150)
+    
+    plt.savefig(out_dir / "step5_tavi_share_fit.png", dpi=150)
     plt.close()
 
-    # 4. Re-apply Demographic Growth (Forecast)
-    # ---------------------------------------------------------
-    # Calculate 2024 Age-Specific Rates 
-    rates_2024 = {}
-    if 2024 in X_tavi:
-        y24_rows = tavi_df[tavi_df['year'] == 2024]
-        row24_pop = pop_mapped.loc[2024]
-        last_scale = scale_factors.get(2024, 1.0)
-    else:
-        y24_rows = tavi_df[tavi_df['year'] == X_tavi[-1]]
-        row24_pop = pop_mapped.loc[X_tavi[-1]]
-        last_scale = scale_factors.get(X_tavi[-1], 1.0)
-        
-    for b in bands:
-        c = y24_rows[y24_rows['age_band']==b]['count'].sum()
-        c_norm = c * last_scale
-        p = row24_pop.get(b, 1)
-        rates_2024[b] = c_norm / p
-
-    # Calculate Demographic Multiplier
-    demo_mult = []
-    base_idx_val = sum(rates_2024[b] * ref_pop.get(b, 0) for b in bands)
-    
-    for y in proj_years_full:
-        if y in pop_mapped.index:
-            p_row = pop_mapped.loc[y]
-            idx_val = sum(rates_2024[b] * p_row.get(b, 0) for b in bands)
-            mult = idx_val / base_idx_val if base_idx_val > 0 else 1.0
-            demo_mult.append(mult)
-        else:
-            demo_mult.append(demo_mult[-1])
-            
-    # FINAL TAVI FORECAST
-    pred_tavi = pred_adj_vol * np.array(demo_mult)
-    
-    # NEW COMPARISON PLOT: Fixed vs With-Demo + Pop Distribution 
-    # ---------------------------------------------------------
-    fig5, ax5 = plt.subplots(figsize=(12, 7))
-    
-    # 1. Curves
-    ax5.plot(proj_years_full, pred_adj_vol, 'g--', linewidth=2, label="Sigmoid Only (Fixed 2024 Pop)")
-    ax5.plot(proj_years_full, pred_tavi, 'b-', linewidth=3, label="Final Forecast (Sigmoid + Demographic Shift)")
-    
-    ax5.set_ylabel("TAVI Volume", fontsize=12)
-    ax5.set_title("Step 5.4: Impact of Demographics on TAVI Adoption", fontsize=14)
-    ax5.grid(True, alpha=0.3)
-    
-    # 2. Population on Twin Axis
-    ax5_pop = ax5.twinx()
-    
-    # Calculate Pop Groups (Split at 80)
-    pop_under_80 = []
-    pop_over_80 = []
-    
-    bands_u80 = ['50-54', '55-59', '60-64', '65-69', '70-74', '75-79']
-    bands_o80 = ['>=80']
-    
-    for y in proj_years_full:
-        if y in pop_mapped.index:
-            row = pop_mapped.loc[y]
-            u80 = sum(row.get(b, 0) for b in bands_u80)
-            o80 = sum(row.get(b, 0) for b in bands_o80)
-            pop_under_80.append(u80)
-            pop_over_80.append(o80)
-        else:
-            pop_under_80.append(pop_under_80[-1] if pop_under_80 else 0)
-            pop_over_80.append(pop_over_80[-1] if pop_over_80 else 0)
-            
-    # Plot Pop
-    ax5_pop.plot(proj_years_full, pop_under_80, color='orange', linestyle=':', alpha=0.7, label="Pop < 80 (50-79)")
-    ax5_pop.plot(proj_years_full, pop_over_80, color='purple', linestyle=':', alpha=0.7, label="Pop >= 80")
-    
-    ax5_pop.set_ylabel("Population Count", fontsize=12)
-    
-    # Format Y-axis in Millions
-    def millions_fmt(x, pos): return f'{x*1e-6:.1f}M'
-    ax5_pop.yaxis.set_major_formatter(mtick.FuncFormatter(millions_fmt))
-    
-    # Combine Legends
-    lines, labels = ax5.get_legend_handles_labels()
-    lines2, labels2 = ax5_pop.get_legend_handles_labels()
-    ax5.legend(lines + lines2, labels + labels2, loc='upper left')
-    
-    plt.savefig(out_dir / "step5_demographic_impact.png", dpi=150)
-    plt.close()
-    
     # ==========================================
     # === STEP 6: FINAL RESIDUAL CALCULATION ===
     # ==========================================
     final_data = []
     for i, y in enumerate(proj_years_full):
         final_data.append({
-            "year": y, "TAM": tam_series[i], "pred_TAVI": pred_tavi[i], 
-            "pred_SAVR": max(0, tam_series[i] - pred_tavi[i])
+            "year": y, "TAM": tam_series[i], "pred_TAVI": pred_tavi_vol[i], 
+            "pred_SAVR": pred_savr_vol[i]
         })
     res_df = pd.DataFrame(final_data)
     res_df.to_csv(out_dir / "final_calculation_report.csv", index=False)
     
     fig, ax = plt.subplots(figsize=(12, 7))
     ax.plot(res_df['year'], res_df['TAM'], 'k--', linewidth=2, label='Total Addressable Market (TAM)')
+    # Plot TAVI Forecast
     ax.plot(res_df['year'], res_df['pred_TAVI'], 'b-', linewidth=3, label='TAVI Forecast')
+    # Plot SAVR Forecast
     ax.plot(res_df['year'], res_df['pred_SAVR'], 'r-', linewidth=3, label='SAVR Forecast (Residual)')
+    
+    # Plot Historical TAVI Normalized Points
+    # We need to overlay them. 
+    # Use X_tavi and Y_tavi_norm (Volume) from Step 5.1
     ax.scatter(X_tavi, Y_tavi_norm, color='blue', alpha=0.3, label="Historical TAVI (Normalized)")
     
     ax.set_title("Step 6: Final Market Projection (TAVI vs SAVR)", fontsize=16)

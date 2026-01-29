@@ -29,6 +29,8 @@ def main():
     parser.add_argument("--country", choices=["singapore", "korea"], default="singapore")
     parser.add_argument("--start-year", type=int, default=2012, help="Start year for index data (inclusive)")
     parser.add_argument("--config-template", default="simulation_run_v1/configs/model_v12_singapore.yaml")
+    parser.add_argument("--sigmoid-mode", default="free", help="Sigmoid mode: free, fixed_cap, fixed_midpoint")
+    parser.add_argument("--fixed-midpoint-val", type=float, default=2013, help="Value for x0 if using fixed_midpoint mode")
     args = parser.parse_args()
 
     # 1. Setup Directories
@@ -62,7 +64,9 @@ def main():
     cmd_index = [
         "python", model_script,
         "--out-dir", str(index_out_dir.absolute()),
-        "--start-year", str(args.start_year)
+        "--start-year", str(args.start_year),
+        "--sigmoid-mode", str(args.sigmoid_mode),
+        "--fixed-midpoint-val", str(args.fixed_midpoint_val)
     ]
     
     run_command(cmd_index, cwd=str(base_dir))
