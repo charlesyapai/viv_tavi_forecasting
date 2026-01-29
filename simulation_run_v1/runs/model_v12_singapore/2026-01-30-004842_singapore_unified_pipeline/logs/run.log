@@ -1,0 +1,39 @@
+00:48:45 | INFO     | Outputs will be stored under /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline
+00:48:45 | INFO     | Pre-compute enabled: building age/sex population, risk scores, redo targets.
+00:48:45 | INFO     | Built population files from UN data (Years 2022-2050)
+00:48:45 | INFO     | Built index projection: TAVI rows 884, SAVR rows 884
+00:48:47 | INFO     | Demography figures stored under /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/demography
+00:48:47 | INFO     | Risk figures stored under /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/risks
+00:48:47 | INFO     | TAVI rows 884, SAVR rows 884 (observed + projection)
+00:48:48 | INFO     | Run 1/100: realized ViV — TAVR-in-SAVR=1597, TAVR-in-TAVR=545
+00:48:51 | INFO     | Run 11/100: realized ViV — TAVR-in-SAVR=2059, TAVR-in-TAVR=675
+00:48:54 | INFO     | Run 21/100: realized ViV — TAVR-in-SAVR=2628, TAVR-in-TAVR=1023
+00:48:59 | INFO     | Run 31/100: realized ViV — TAVR-in-SAVR=1427, TAVR-in-TAVR=459
+00:49:04 | INFO     | Run 41/100: realized ViV — TAVR-in-SAVR=2063, TAVR-in-TAVR=709
+00:49:09 | INFO     | Run 51/100: realized ViV — TAVR-in-SAVR=2035, TAVR-in-TAVR=704
+00:49:15 | INFO     | Run 61/100: realized ViV — TAVR-in-SAVR=1909, TAVR-in-TAVR=625
+00:49:19 | INFO     | Run 71/100: realized ViV — TAVR-in-SAVR=2144, TAVR-in-TAVR=770
+00:49:23 | INFO     | Run 81/100: realized ViV — TAVR-in-SAVR=1784, TAVR-in-TAVR=625
+00:49:26 | INFO     | Run 91/100: realized ViV — TAVR-in-SAVR=2088, TAVR-in-TAVR=695
+00:49:28 | INFO     | Run 100/100: realized ViV — TAVR-in-SAVR=1734, TAVR-in-TAVR=576
+00:49:30 | INFO     | Tables (CSV):
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/index/tavi_with_projection.csv  — TAVI index volumes (year × age_band × sex × src)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/index/savr_with_projection.csv  — SAVR index volumes (year × age_band × sex × src)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/flow/patient_flow_mean.csv  — Mean patient flow per year (index_cnt, deaths, failures, viable)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/viv/viv_candidates_totals.csv  — ViV candidates (mean ± SD across runs, by year × viv_type)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/viv/viv_candidates_v5like.csv  — v5-style candidate totals (mean of bins, QA only)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/viv/viv_forecast.csv  — ViV realized (mean ± SD across runs)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/tables/viv/viv_forecast_realized.csv  — ViV realized after redo-SAVR subtraction
+00:49:30 | INFO     | QC tables:
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/qc/index_projection/tavi_index_projection_*  — TAVI index projection slice
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/qc/index_projection/savr_index_projection_*  — SAVR index projection slice
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/qc/redo/redo_savr_qc.csv  — Redo-SAVR reconciliation (before/after subtraction)
+00:49:30 | INFO     | Figures (PNG):
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/index/image_A_tavi_index.png  — TAVI index: observed vs projected
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/index/image_B_savr_index.png  — SAVR index: observed vs projected
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/index/index_volume_overlay.png  — TAVI vs SAVR index overlay
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/flow/flow_tavi.png  — Flow diagram for TAVI (index, deaths, failures, viable)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/flow/flow_savr.png  — Flow diagram for SAVR (index, deaths, failures, viable)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/viv/image_C_viv_pretty_*.png  — Image-C-style ViV forecast (bars + lines)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/demography  — Demography plots (age-band lines, heatmap)
+00:49:30 | INFO     |   /Users/charles/Desktop/viv_tavi_forecasting/simulation_run_v1/runs/model_v12_singapore/2026-01-30-004842_singapore_unified_pipeline/figures/risks  — Risk plots (heatmaps and bar charts)
