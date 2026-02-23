@@ -2555,16 +2555,6 @@ def _plot_viv_candidates_vs_realized(cand_summary: pd.DataFrame,
             wide_cand[c] = 0.0
     wide_cand["total"] = wide_cand["tavi_in_savr"] + wide_cand["tavi_in_tavi"]
 
-    # --- Realized (post‑penetration, after redo haircut) ---
-    real = realized_adj.copy()
-    value_col = "realized" if "realized" in real.columns else "mean"
-    sub_real = real[(real["year"] >= year_lo) & (real["year"] <= year_hi)]
-    wide_real = sub_real.pivot(index="year", columns="viv_type", values=value_col)\
-                        .reindex(index=wide_cand.index, fill_value=0.0)
-    for c in ("tavi_in_savr", "tavi_in_tavi"):
-        if c not in wide_real.columns:
-            wide_real[c] = 0.0
-
     fig, ax = plt.subplots(figsize=(10, 5), dpi=140)
     bar_color_final = bar_color or "#bbbbbb"
 
@@ -2585,7 +2575,7 @@ def _plot_viv_candidates_vs_realized(cand_summary: pd.DataFrame,
         marker="o",
         linewidth=2,
         color="tab:red",
-        label="Candidates: TAVR-in-SAVR",
+        label="TAVR-in-SAVR",
         zorder=3,
     )
     ax.plot(
@@ -2594,38 +2584,14 @@ def _plot_viv_candidates_vs_realized(cand_summary: pd.DataFrame,
         marker="s",
         linewidth=2,
         color="tab:blue",
-        label="Candidates: TAVR-in-TAVR",
+        label="TAVR-in-TAVR",
         zorder=3,
-    )
-
-    # Dashed lines = realized by type
-    ax.plot(
-        wide_real.index,
-        wide_real["tavi_in_savr"],
-        linestyle="--",
-        linewidth=2,
-        color="tab:red",
-        label="Realized: TAVR-in-SAVR",
-        zorder=4,
-    )
-    ax.plot(
-        wide_real.index,
-        wide_real["tavi_in_tavi"],
-        linestyle="--",
-        linewidth=2,
-        color="tab:blue",
-        label="Realized: TAVR-in-TAVR",
-        zorder=4,
     )
 
     # Label bars with totals
     max_val = float(
-        np.nanmax([
-            wide_cand[["tavi_in_savr", "tavi_in_tavi", "total"]].to_numpy().max()
-            if len(wide_cand) else 0,
-            wide_real.to_numpy().max() if len(wide_real) else 0,
-        ])
-    ) if (len(wide_cand) or len(wide_real)) else 0.0
+        wide_cand[["tavi_in_savr", "tavi_in_tavi", "total"]].to_numpy().max()
+    ) if len(wide_cand) else 0.0
     y_off_bar = 0.02 * max_val if max_val > 0 else 1.0
 
     for rect in bars:
@@ -2641,7 +2607,7 @@ def _plot_viv_candidates_vs_realized(cand_summary: pd.DataFrame,
             color=bar_color_final,
         )
 
-    ax.set_title(f"Available ViV candidates vs realized ({year_lo}–{year_hi})")
+    ax.set_title(f"ViV candidates by type ({year_lo}–{year_hi})")
     ax.set_xlabel("Year")
     ax.set_ylabel("Procedures / yr")
     ax.legend(ncol=2, fontsize=9)
