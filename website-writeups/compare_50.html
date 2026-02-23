@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparison: Korea vs Singapore — 50% TAVI Cap</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+        .back-link { display: block; margin-bottom: 1rem; color: #0066cc; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        h1 { text-align: center; margin-bottom: 0.5rem; font-size: 1.8rem; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 2rem; font-size: 1rem; }
+        .badge { display: inline-block; background: #e67e22; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .section-header {
+            grid-column: 1 / -1;
+            background: #1d1d1f;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1rem 1.5rem;
+            background: #f5f5f7;
+            border-bottom: 1px solid #e5e5e5;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .card-header.korea { border-left: 4px solid #e74c3c; }
+        .card-header.singapore { border-left: 4px solid #3498db; }
+        .card-content {
+            padding: 1rem;
+            text-align: center;
+        }
+        .card-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .caption {
+            margin-top: 0.75rem;
+            color: #888;
+            font-size: 0.85rem;
+        }
+        .group-title {
+            grid-column: 1 / -1;
+            padding: 1.5rem 0 0.5rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-bottom: 2px solid #e5e5e5;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Dashboard</a>
+    <h1>Korea vs Singapore — <span class="badge">50% TAVI Cap</span></h1>
+    <p class="subtitle">Side-by-side comparison of index procedure projections and Monte Carlo simulations with a 50% maximum TAVI adoption share.</p>
+
+    <!-- Index Model Steps -->
+    <div class="comparison-row">
+        <div class="group-title">Index Procedure Model (Steps 1–6)</div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Data Overview</div>
+            <div class="card-content">
+                <img src="assets/korea_50/index_projections/step1_data_overview.png" alt="Korea Step 1">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Data Overview</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/index_projections/step1_data_overview.png" alt="Singapore Step 1">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Normalization</div>
+            <div class="card-content">
+                <img src="assets/korea_50/index_projections/step2_normalization_effect.png" alt="Korea Step 2">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Normalization</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/index_projections/step2_normalization_effect.png" alt="Singapore Step 2">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Risk Trends</div>
+            <div class="card-content">
+                <img src="assets/korea_50/index_projections/step3_projected_risk_trends.png" alt="Korea Step 3">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Risk Trends</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/index_projections/step3_projected_risk_trends.png" alt="Singapore Step 3">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Total Addressable Market</div>
+            <div class="card-content">
+                <img src="assets/korea_50/index_projections/step4_projected_tam.png" alt="Korea Step 4">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Total Addressable Market</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/index_projections/step4_projected_tam.png" alt="Singapore Step 4">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — TAVI Adoption (50% Cap)</div>
+            <div class="card-content">
+                <img src="assets/korea_50/index_projections/step5_tavi_share_fit.png" alt="Korea Step 5">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — TAVI Adoption (50% Cap)</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/index_projections/step5_tavi_share_fit.png" alt="Singapore Step 5">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Final Procedure Forecast</div>
+            <div class="card-content">
+                <img src="assets/korea_50/index_projections/step6_final_projection.png" alt="Korea Step 6">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Final Procedure Forecast</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/index_projections/step6_final_projection.png" alt="Singapore Step 6">
+            </div>
+        </div>
+    </div>
+
+    <!-- MC Simulation -->
+    <div class="comparison-row">
+        <div class="group-title">Monte Carlo Simulation</div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Demographic Trends</div>
+            <div class="card-content">
+                <img src="assets/korea_50/figures/demography/demography_summary_trends.png" alt="Korea Demographics">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Demographic Trends</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/figures/demography/demography_summary_trends.png" alt="Singapore Demographics">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — Population by Age Group</div>
+            <div class="card-content">
+                <img src="assets/korea_50/figures/demography/age_projection_lines_Combined.png" alt="Korea Age Groups">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — Population by Age Group</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/figures/demography/age_projection_lines_Combined.png" alt="Singapore Age Groups">
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-row">
+        <div class="card">
+            <div class="card-header korea">🇰🇷 Korea — ViV Candidates vs Realized</div>
+            <div class="card-content">
+                <img src="assets/korea_50/figures/viv/image_D_viv_candidates_vs_realized_2022_2050.png" alt="Korea ViV">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header singapore">🇸🇬 Singapore — ViV Candidates vs Realized</div>
+            <div class="card-content">
+                <img src="assets/singapore_50/figures/viv/image_D_viv_candidates_vs_realized_2022_2050.png" alt="Singapore ViV">
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

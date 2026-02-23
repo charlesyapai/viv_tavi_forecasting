@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korea ViV-TAVI Projections (Unified)</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; color: #1d1d1f; }
+        .result-block { margin-bottom: 3rem; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .block-header { padding: 1.5rem; background: #f5f5f7; border-bottom: 1px solid #e5e5e5; }
+        .block-header h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+        .block-content { padding: 1.5rem; text-align: center; }
+        .result-image { max-width: 100%; height: auto; border-radius: 4px; }
+        .caption { margin-top: 1rem; color: #666; font-size: 0.9rem; }
+        h1 { text-align: center; margin-bottom: 1rem; }
+        p.description { text-align: center; color: #666; max-width: 600px; margin: 0 auto 3rem; }
+        .back-link { display: block; margin-bottom: 1rem; color: #0066cc; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Dashboard</a>
+    <h1>Korea ViV-TAVI Projections (Unified)</h1>
+    <p class="description">Comprehensive forecast including Index Procedure projections (Step 1-6) and downstream Monte Carlo Valve-in-Valve simulations.</p>
+    
+    <div id="content-area">
+        <div class="result-block">
+            <div class="block-header"><h2>1. Index Model: Data Overview</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/index_projections/step1_data_overview.png" alt="1. Index Model: Data Overview" class="result-image">
+                <div class="caption">Overview of historical procedure volumes and demographic trends.</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>2. Index Model: Normalization</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/index_projections/step2_normalization_effect.png" alt="2. Index Model: Normalization" class="result-image">
+                <div class="caption">Redistribution of pandemic-era volumes (2020-2023) to smooth trends.</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>3. Index Model: Risk Trends</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/index_projections/step3_projected_risk_trends.png" alt="3. Index Model: Risk Trends" class="result-image">
+                <div class="caption">Age-stratified risk projections using logarithmic fitting.</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>4. Index Model: TAM</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/index_projections/step4_projected_tam.png" alt="4. Index Model: TAM" class="result-image">
+                <div class="caption">Projection of the total addressable market based on demographic shifts.</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>5. Index Model: TAVI Adoption</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/index_projections/step5_tavi_share_fit.png" alt="5. Index Model: TAVI Adoption" class="result-image">
+                <div class="caption">Sigmoid fit of TAVI adoption (Free 3-parameter fit logic).</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>6. Index Model: Final Procedure Forecast</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/index_projections/step6_final_projection.png" alt="6. Index Model: Final Procedure Forecast" class="result-image">
+                <div class="caption">Final forecast of TAVI and SAVR volumes (fed into Monte Carlo).</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>7. MC Sim: Demographic Trends</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/figures/demography/demography_summary_trends.png" alt="7. MC Sim: Demographic Trends" class="result-image">
+                <div class="caption">Projected population trends used in the simulation.</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>8. MC Sim: Population by Age Group</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/figures/demography/age_projection_lines_Combined.png" alt="8. MC Sim: Population by Age Group" class="result-image">
+                <div class="caption">Detailed age group projections.</div>
+            </div>
+        </div>
+        <div class="result-block">
+            <div class="block-header"><h2>9. MC Sim: ViV Candidates vs Realized</h2></div>
+            <div class="block-content">
+                <img src="assets/korea_run/figures/viv/image_D_viv_candidates_vs_realized_2022_2050.png" alt="9. MC Sim: ViV Candidates vs Realized" class="result-image">
+                <div class="caption">Projected pool of viable candidates vs realized Valve-in-Valve procedures.</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
