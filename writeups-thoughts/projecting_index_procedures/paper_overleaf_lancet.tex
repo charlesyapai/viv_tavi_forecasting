@@ -1,0 +1,759 @@
+% ============================================================
+%  LANCET-STYLE FORMATTING — DUAL SCENARIO VERSION
+%  Paste this into Overleaf as main.tex
+%  CHARTS: Copy PNGs from website-writeups/assets/ into your
+%          Overleaf project under a figures/ folder, or adjust
+%          the paths in \includegraphics accordingly.
+% ============================================================
+\documentclass[10pt, a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage[super,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{multicol}
+
+% --- Page geometry ---
+\geometry{
+    top=2.0cm,
+    bottom=2.0cm,
+    left=1.8cm,
+    right=1.8cm,
+}
+
+% --- Colours ---
+\definecolor{lancetred}{RGB}{167, 25, 48}
+\definecolor{lancetgrey}{RGB}{100, 100, 100}
+\definecolor{panelbg}{RGB}{237, 237, 237}
+
+% --- Section formatting ---
+\titleformat{\section}
+    {\large\bfseries\color{lancetred}}
+    {}
+    {0pt}
+    {}
+\titleformat{\subsection}
+    {\normalsize\bfseries}
+    {}
+    {0pt}
+    {}
+\titleformat{\subsubsection}
+    {\normalsize\bfseries\itshape}
+    {}
+    {0pt}
+    {}
+\setcounter{secnumdepth}{0}
+
+% --- Spacing ---
+\titlespacing*{\section}{0pt}{14pt}{4pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+\titlespacing*{\subsubsection}{0pt}{8pt}{2pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% --- Captions ---
+\captionsetup{
+    font={small,sf},
+    labelfont={bf,color=lancetred},
+    labelsep=quad,
+    justification=justified,
+    singlelinecheck=false,
+}
+
+% --- Panel environments ---
+\newmdenv[
+    backgroundcolor=panelbg,
+    linecolor=lancetred,
+    linewidth=1.5pt,
+    innertopmargin=10pt,
+    innerbottommargin=10pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    skipabove=12pt,
+    skipbelow=12pt,
+]{lancetpanel}
+
+% --- Hyperlinks ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=lancetred,
+    citecolor=lancetred,
+    urlcolor=lancetred,
+}
+
+% --- Header / Footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\small\color{lancetgrey}\thepage}
+
+% --- Figure path (adjust for Overleaf) ---
+% \graphicspath{{figures/}}
+
+% ============================================================
+\begin{document}
+
+% ============================================================
+%  TITLE PAGE (single column)
+% ============================================================
+
+\vspace*{-0.5cm}
+{\small\color{lancetgrey}\textbf{Articles}}
+\vspace{6pt}
+
+{\LARGE\bfseries\color{lancetred}
+Forecasting TAVI and SAVR procedure volumes in Asia: a demographic-anchored adoption model addressing socioeconomic determinants of valve-in-valve demand
+\par}
+
+\vspace{10pt}
+
+{\normalsize
+Charles Yap\textsuperscript{1},
+Hyunjin Ahn\textsuperscript{2},
+Jeehoon Kang\textsuperscript{2*}
+Jonathan Yap\textsuperscript{1*}
+}
+
+\vspace{4pt}
+
+{\small\color{lancetgrey}
+\textsuperscript{1} National Heart Centre Singapore, Singapore\\
+\textsuperscript{2} Seoul University Hospital\\[2pt]
+\textsuperscript{*} Corresponding author.
+}
+
+\vspace{14pt}
+
+% ============================================================
+%  SUMMARY PANEL
+% ============================================================
+\begin{lancetpanel}
+{\large\bfseries\color{lancetred} Summary}
+\vspace{6pt}
+
+\small
+
+\textbf{Background}\quad
+Accurate forecasting of transcatheter aortic valve implantation (TAVI) and surgical aortic valve replacement (SAVR) volumes is essential for predicting valve-in-valve (ViV) TAVI demand. Ohno et al.\textsuperscript{13} developed a Monte Carlo engine for ViV forecasting in the United States and Japan, but the accompanying editorial\textsuperscript{14} identified a critical gap: evolving socioeconomic factors---including changing TAVR-to-SAVR ratios, regional guidelines, and reimbursement models---are not yet accounted for in prediction models. We address this gap by developing a demographically anchored framework that explicitly models both population ageing and TAVI adoption dynamics.
+
+\vspace{4pt}
+\textbf{Methods}\quad
+We integrated national registry data (2012--2024), United Nations population projections (to 2050), and a constrained logistic (sigmoid) adoption model into a forecasting pipeline applied to South Korea and Singapore. The model decomposes projected demand into a Total Addressable Market (TAM)---driven by age-stratified procedure risk rates and population ageing---and a TAVI adoption share bounded by a configurable maximum. Projected TAVI and SAVR volumes feed into a 100-run Monte Carlo engine that simulates patient-level valve durability, age-hazard--adjusted survival, and time-varying ViV penetration rates to estimate both ViV candidate pools and realised procedure volumes. Redo-SAVR demand is estimated separately from registry-derived per-capita risk rates applied to the evolving population structure, then subtracted from realised TAVI-in-SAVR volumes. Because the long-term TAVI market share is uncertain, we present two bounding scenarios: a conservative ceiling of $L_{\max} = 0{\cdot}50$ (50\% TAVI share) and an expanded ceiling of $L_{\max} = 0{\cdot}75$ (75\% TAVI share).
+
+\vspace{4pt}
+\textbf{Findings}\quad
+Total procedural demand (TAM) is projected to grow 2$\cdot$7-fold in Korea (to 10\,189 procedures per year) and 3$\cdot$4-fold in Singapore (to 1\,389) by 2050, driven overwhelmingly by the $\geq$80 population. The adoption ceiling determines only how this demand is split: under the 50\% scenario Korea's TAM divides equally between TAVI and SAVR (5\,095 each), whereas under 75\% TAVI captures 7\,641 and SAVR falls to 2\,548. Downstream Monte Carlo simulation projects 2\,647--2\,959 annual ViV TAVI candidates in Korea and 280--285 in Singapore by 2050, with TAVI-in-TAVI candidates overtaking TAVI-in-SAVR by approximately 2030---consistent with patterns reported by Ohno et al.\textsuperscript{13} in the United States and Japan. After applying time-varying penetration rates and subtracting demographically projected redo-SAVR volumes, net realised ViV TAVI demand remains substantial across all scenarios.
+
+\vspace{4pt}
+\textbf{Interpretation}\quad
+Demographic ageing is the dominant long-run driver of aortic valve procedure demand. The TAVI adoption ceiling---a socioeconomic parameter reflecting guidelines, reimbursement, and institutional capacity---determines the TAVI/SAVR split but not total demand. ViV candidate projections confirm that a substantial reintervention burden will emerge from the mid-2030s onward. Incorporating redo-SAVR as a demographically projected competing pathway and time-varying ViV penetration rates enables estimation of net realised ViV demand, moving beyond candidate counts to actionable capacity planning figures. This framework provides an end-to-end pipeline from demographic TAM through index volumes and redo-SAVR estimation to realised ViV procedure forecasting.
+
+\vspace{4pt}
+\textbf{Funding}\quad
+None.
+\end{lancetpanel}
+
+\vspace{10pt}
+
+% ============================================================
+%  RESEARCH IN CONTEXT PANEL
+% ============================================================
+\begin{lancetpanel}
+{\large\bfseries\color{lancetred} Research in context}
+\vspace{6pt}
+
+\small
+
+\textbf{Evidence before this study}\quad
+We searched PubMed and Embase for studies published up to January 2025 using terms ``TAVI OR TAVR'' AND ``forecast* OR projection*'' AND ``volume OR demand''. Ohno et al.\textsuperscript{13} developed the most comprehensive framework to date---a MATLAB-based Monte Carlo engine simulating bioprosthetic valve lifespans across over 4$\cdot$4 million US and 800\,000 Japanese AVR procedures. The accompanying editorial\textsuperscript{14} noted that while the global ViV-TAVR trend is expected to surge, the exact trajectory will change with ``evolving socioeconomic factors''---including changing TAVR-to-SAVR ratios, regional guidelines, device costs, and reimbursement models---that are not yet incorporated into prediction models. No prior study has applied demographically anchored adoption modelling to Asian TAVI programmes or explicitly parameterised these socioeconomic determinants.
+
+\vspace{4pt}
+\textbf{Added value of this study}\quad
+We present a framework that decomposes procedural demand into a demographically driven Total Addressable Market (TAM) and a logistic adoption share, directly addressing the editorial's call for models that account for evolving socioeconomic factors. The configurable adoption ceiling ($L_{\max}$) captures the net effect of guidelines, reimbursement, and institutional capacity as a single interpretable parameter. Downstream, we extend the ViV modelling pipeline beyond candidate estimation to include time-varying ViV penetration rates and demographically projected redo-SAVR volumes as a competing reintervention pathway---yielding net realised ViV demand estimates. Applied to Korea and Singapore under two bounding scenarios (50\% and 75\% TAVI ceiling), we demonstrate that total demand growth is demographically determined, while the TAVI/SAVR split is governed by socioeconomic factors---and that SAVR volumes may grow despite TAVI substitution.
+
+\vspace{4pt}
+\textbf{Implications of all the available evidence}\quad
+Extending the Ohno et al.\textsuperscript{13} Monte Carlo framework with demographically anchored upstream volume projections provides a more complete ViV forecasting pipeline. Healthcare planners in rapidly ageing Asian populations should not assume that TAVI growth will reduce SAVR demand. The two-scenario approach enables rapid assessment of how socioeconomic policy changes (reimbursement expansion, guideline updates) will affect both procedure volumes and downstream ViV burden.
+\end{lancetpanel}
+
+\vspace{16pt}
+
+% ============================================================
+%  BODY TEXT (two columns)
+% ============================================================
+\begin{multicols}{2}
+
+% ============================================================
+%  INTRODUCTION
+% ============================================================
+\section{Introduction}
+
+Aortic stenosis (AS) is the most common acquired valvular heart disease in the developed world, affecting 2--7\% of adults aged over 65 years and rising to 12$\cdot$4\% in those over 75.\textsuperscript{1,2} Without intervention, symptomatic severe AS carries 2-year mortality exceeding 50\%.\textsuperscript{3} For decades, surgical aortic valve replacement (SAVR) was the sole definitive treatment, offering substantial survival benefits in operable patients.
+
+The introduction of transcatheter aortic valve implantation (TAVI) in 2002\textsuperscript{4} fundamentally altered this landscape. The PARTNER and CoreValve programmes established TAVI as non-inferior---and in some populations superior---to SAVR across progressively lower risk categories: high-risk (PARTNER 1, 2010),\textsuperscript{5} intermediate-risk (PARTNER 2, 2016; SURTAVI, 2017),\textsuperscript{6,7} and low-risk (PARTNER 3, 2019; Evolut Low Risk, 2019).\textsuperscript{8,9} In many Western countries, TAVI now exceeds 50\% of all aortic valve interventions.
+
+The Asian context presents unique features. South Korea's $\geq$65 population is projected to grow from 17\% (2022) to 46\% (2050)---the fastest ageing rate among OECD nations.\textsuperscript{10} The $\geq$80 cohort will increase 3$\cdot$0-fold in Korea and 3$\cdot$6-fold in Singapore between 2024 and 2050. TAVI adoption in Asia has lagged behind the West by 5--10 years, meaning that Asian programmes are currently in their steepest growth phase.
+
+All bioprosthetic valves are subject to structural valve deterioration (SVD), with durability estimated at 10--20 years.\textsuperscript{11} Valve-in-valve (ViV) TAVI has emerged as the preferred reintervention strategy,\textsuperscript{12} creating growing demand for accurate upstream volume projections. Ohno et al.\textsuperscript{13} recently developed a Monte Carlo engine for ViV forecasting, projecting that ViV procedures will reach approximately 42\,000 in the United States and 4\,972 in Japan by 2035. Notably, the accompanying editorial by Yoon et al.\textsuperscript{14} highlighted that the exact ViV trajectory will depend on ``evolving socioeconomic factors'' including changing TAVR-to-SAVR ratios, regional guidelines, device costs, and reimbursement models---factors not yet incorporated into prediction models.
+
+The present work directly addresses this gap. We introduce three methodological components that capture the key socioeconomic determinants identified by Yoon et al.: (1) a \textbf{demographic distribution shift model} that accounts for population ageing as the primary driver of total procedural demand; (2) an \textbf{explicit TAVI adoption model} that parameterises the socioeconomic factors governing the TAVI/SAVR split as a single configurable parameter ($L_{\max}$); and (3) a \textbf{demographically anchored redo-SAVR model} that projects surgical reintervention volumes from registry-derived per-capita risk rates, enabling estimation of net realised ViV TAVI demand after accounting for patients diverted to open redo surgery. Because the ultimate TAVI market share is uncertain---depending on long-term trial data, guideline evolution, and reimbursement policy---we present results under two bounding scenarios ($L_{\max} = 0{\cdot}50$ and $L_{\max} = 0{\cdot}75$).
+
+
+% ============================================================
+%  METHODS
+% ============================================================
+\section{Methods}
+
+\subsection{Data sources}
+
+Three data categories were used: (1) national registry TAVI and SAVR procedure counts by five-year age band (50--54 to $\geq$80) and sex---from Korea's HIRA database and Singapore's national cardiac registry (2012--2024); (2) United Nations World Population Prospects (2024 revision) providing sex-specific projections to 2050;\textsuperscript{10} and (3) configurable model parameters, principally the maximum TAVI adoption share ($L_{\max}$).
+
+\subsection{Age-band harmonisation}
+
+UN five-year population bands (80--84, 85--89, \ldots, 100+) were aggregated into a single $\geq$80 band to match registry schema. Bands 50--54 through 75--79 mapped directly.
+
+\subsection{Pandemic-period redistribution (step 2)}
+
+COVID-19 distorted the 2020--2023 data. We applied a volume-preserved redistribution satisfying two constraints: (1) the normalised series follows the pre-pandemic linear trend ($T(t) = \alpha + \beta t$, fitted to $t \leq 2019$); and (2) total volume is conserved. The scaling factor is:
+%
+\begin{equation}
+\kappa = \frac{\sum_{t \in W} O(t)}{\sum_{t \in W} T(t)}
+\end{equation}
+%
+where $W = \{2020, 2021, 2022, 2023\}$. Normalised values are $N(t) = \kappa \cdot T(t)$ for $t \in W$.
+
+\subsection{Age-stratified risk rate projection (step 3)}
+
+The procedure risk rate $R_i(t)$ for age band $i$ is:
+%
+\begin{equation}
+R_i(t) = \frac{N_{\mathrm{TAVI},i}(t) + N_{\mathrm{SAVR},i}(t)}{P_i(t)}
+\end{equation}
+%
+Normalised rates are projected using a logarithmic saturation model:
+%
+\begin{equation}
+\hat{R}_i(t) = a_i + b_i \cdot \ln(t - 2010)
+\end{equation}
+%
+with parameters estimated by Levenberg--Marquardt fitting.
+
+\subsection{Total Addressable Market (step 4)}
+
+%
+\begin{equation}
+\mathrm{TAM}(t) = \sum_{i \in \mathcal{B}} P_i(t) \cdot \hat{R}_i(t)
+\end{equation}
+%
+where $\mathcal{B}$ spans 50--54 to $\geq$80. The TAM is identical across both scenarios, as it represents total demand irrespective of modality.
+
+\subsection{TAVI adoption modelling (step 5)}
+
+Adoption is modelled with a constrained sigmoid:
+%
+\begin{equation}
+\hat{S}_{\mathrm{TAVI}}(t) = \frac{L_{\max}}{1 + e^{-k(t - t_0)}}
+\end{equation}
+%
+where $L_{\max}$ is the maximum TAVI share of TAM. Parameters $k$ and $t_0$ are fitted to historical share data from 2016 onwards. We present two scenarios:
+
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{Scenario A ($L_{\max} = 0{\cdot}50$):} Conservative ceiling reflecting current clinical practice where SAVR retains a substantial role for complex anatomies and younger patients.
+    \item \textbf{Scenario B ($L_{\max} = 0{\cdot}75$):} Expanded ceiling reflecting potential guideline evolution, favourable long-term TAVI data, and broader indications.
+\end{itemize}
+
+\subsection{Volume decomposition (step 6)}
+
+%
+\begin{equation}
+\hat{N}_{\mathrm{TAVI}}(t) = \hat{S}_{\mathrm{TAVI}}(t) \cdot \mathrm{TAM}(t)
+\end{equation}
+\begin{equation}
+\hat{N}_{\mathrm{SAVR}}(t) = \max\!\bigl(0,\; \mathrm{TAM}(t) - \hat{N}_{\mathrm{TAVI}}(t)\bigr)
+\end{equation}
+
+\subsection{Downstream Monte Carlo simulation of ViV candidates}
+
+TAVI and SAVR volume projections serve as inputs to a patient-level Monte Carlo engine that estimates both the annual pool of ViV TAVI candidates and realised ViV procedures. The simulation architecture is analogous to the framework of Ohno et al.\textsuperscript{13} but extends it with age-hazard--adjusted survival, time-varying ViV penetration rates, and demographically anchored redo-SAVR subtraction.
+
+\subsubsection{Patient-level sampling}
+
+For each projected index procedure (TAVI or SAVR) in calendar year $Y$, the engine samples four patient-level variables:
+
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{Patient age}: drawn uniformly within the five-year registry age band (e.g.\ 50--54).
+    \item \textbf{Risk category}: sampled from period-specific risk-mix distributions. TAVI risk shares evolve over time to reflect expanding indications (e.g.\ a higher low-risk proportion from 2025 onward); SAVR risk shares are held constant.
+    \item \textbf{Survival time}: drawn from a Normal distribution parameterised by risk category ($\mu_{\text{low}} = 11{\cdot}0$, $\sigma_{\text{low}} = 3{\cdot}0$ years; $\mu_{\text{int/high}} = 6{\cdot}0$, $\sigma_{\text{int/high}} = 2{\cdot}0$ years). An age-hazard adjustment scales survival inversely with patient age:
+    %
+    \begin{equation}
+    S_{\text{adj}} = \frac{S_{\text{base}}}{h^{\,(a - a_{\text{ref}})/5}}
+    \end{equation}
+    %
+    where $h$ is the hazard ratio per five-year increment above reference age $a_{\text{ref}}$. Survival is clamped to $\geq 0{\cdot}1$ years.
+    \item \textbf{Valve durability}: TAVI valves are sampled from a two-component Normal mixture reflecting early failure ($\mu = 4{\cdot}0$, $\sigma = 1{\cdot}5$ years, weight $0{\cdot}2$) and late failure ($\mu = 11{\cdot}5$, $\sigma = 3{\cdot}5$ years, weight $0{\cdot}8$) modes. SAVR bioprosthetic valves use age-stratified distributions: $\mu = 10{\cdot}0$, $\sigma = 5{\cdot}0$ years for patients $<$70, and $\mu = 17{\cdot}0$, $\sigma = 5{\cdot}0$ years for patients $\geq$70. Minimum durability is enforced at 1$\cdot$0 year.
+\end{itemize}
+
+\subsubsection{Per-run stochastic jitter}
+
+To capture inter-run variability beyond patient-level sampling, each Monte Carlo run applies multiplicative jitter to three quantities. Durability is scaled by $\mathcal{N}(1{\cdot}0,\, 0{\cdot}05)$, survival by $\mathcal{N}(1{\cdot}0,\, 0{\cdot}03)$, and penetration by $\mathcal{N}(1{\cdot}0,\, 0{\cdot}10)$, with all factors clamped to $[0{\cdot}2,\, 5{\cdot}0]$ (durability and survival) or $[0{\cdot}0,\, 2{\cdot}0]$ (penetration). This produces realistic inter-run dispersion without altering the mean.
+
+\subsubsection{Candidate classification}
+
+Event-year discretisation assigns $Y_{\text{fail}} = Y + \lfloor \text{durability} \rfloor$ and $Y_{\text{death}} = Y + \lfloor \text{survival} \rfloor$. A patient is classified as a \textbf{ViV TAVI candidate} if:
+%
+\begin{equation}
+Y_{\text{fail}} \leq Y_{\text{death}} \quad \text{and} \quad Y_{\text{sim\_start}} \leq Y_{\text{fail}} \leq Y_{\text{end}}
+\end{equation}
+%
+Candidates are classified as \textbf{TAVI-in-TAVI} (index was TAVI) or \textbf{TAVI-in-SAVR} (index was SAVR).
+
+\subsubsection{ViV penetration and realised procedures}
+
+Not all candidates proceed to ViV TAVI. Time-varying penetration rates $\pi(t)$ govern the probability that a candidate receives ViV reintervention. Penetration is specified at anchor years and linearly interpolated (e.g.\ TAVI-in-TAVI: 10\% in 2022 ramping to 60\% by 2035; TAVI-in-SAVR: 60\% to 80\% over the same period). For each candidate, a Bernoulli draw with probability $\pi(t)$ determines whether the candidate becomes a realised ViV procedure. We report both candidate volumes (the structural demand ceiling) and realised volumes (the expected procedural workload) in our results.
+
+\subsection{Redo-SAVR estimation}
+
+A subset of patients with structural valve deterioration will undergo redo open surgical aortic valve replacement rather than ViV TAVI. We model this using demographically projected absolute redo-SAVR targets derived from national registry data.
+
+\subsubsection{Per-capita redo-SAVR risk}
+
+Observed redo-SAVR counts (from the HIRA database for Korea and national cardiac registry for Singapore, 2012--2024) are stratified by sex and five-year age band. Per-capita redo-SAVR risk rates are computed as:
+%
+\begin{equation}
+R_{\text{redo},i,s}(t) = \frac{N_{\text{redo},i,s}(t)}{P_{i,s}(t)}
+\end{equation}
+%
+where $i$ indexes age band, $s$ indexes sex, and $P$ is the UN-projected population. Risk rates are averaged across reference years (2023--2024) to smooth annual fluctuations.
+
+\subsubsection{Absolute redo-SAVR target projection}
+
+Future redo-SAVR volumes are projected by applying these per-capita risk rates to the evolving population structure:
+%
+\begin{equation}
+\hat{N}_{\text{redo}}(t) = \sum_{i \in \mathcal{B}} \sum_{s \in \{M,F\}} \bar{R}_{\text{redo},i,s} \cdot P_{i,s}(t)
+\end{equation}
+%
+where $\bar{R}_{\text{redo},i,s}$ is the average per-capita risk. This produces absolute yearly redo-SAVR counts that grow with population ageing independently of the Monte Carlo simulation.
+
+\subsubsection{Integration with ViV estimates}
+
+In the post-processing step, absolute redo-SAVR targets are subtracted from the TAVI-in-SAVR realised volumes to yield net ViV TAVI demand:
+%
+\begin{equation}
+\hat{N}_{\text{ViV,net}}^{\text{TiS}}(t) = \max\!\bigl(0,\; \hat{N}_{\text{ViV,realised}}^{\text{TiS}}(t) - \hat{N}_{\text{redo}}(t)\bigr)
+\end{equation}
+%
+This approach replaces per-event redo-SAVR probability draws (which would require uncertain assumptions about individual patient routing) with demographically grounded aggregate estimates, ensuring that the redo-SAVR trajectory reflects the same population ageing dynamics that drive index volumes.
+
+\subsection{Simulation aggregation}
+
+The simulation is repeated over 100 independent runs (seed-controlled for reproducibility), with per-run totals aggregated by year and ViV type. Mean and standard deviation across runs are reported. Each of the four index projection scenarios (two countries $\times$ two $L_{\max}$ values) produces a distinct ViV candidate and realised procedure trajectory.
+
+\subsection{Software}
+
+The pipeline is implemented in Python~3 using NumPy, SciPy, and pandas, with all parameters specified in YAML configuration files. Matplotlib is used for visualisation.
+
+
+% ============================================================
+%  RESULTS
+% ============================================================
+\section{Results}
+
+\subsection{Historical volumes}
+
+Table~\ref{tab:historical} shows procedure volumes at selected years. Korea's TAVI programme grew 31-fold (61 to 1\,862) in nine years; Singapore's grew 4$\cdot$8-fold (30 to 143) over twelve years.
+
+\end{multicols}
+
+\begin{table}[H]
+\centering
+\caption{Historical procedure counts (selected years)}
+\label{tab:historical}
+\smallskip
+\small
+\begin{tabular}{@{}l rrr rrr@{}}
+\toprule
+& \multicolumn{3}{c}{\textbf{South Korea}} & \multicolumn{3}{c}{\textbf{Singapore}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Year} & TAVI & SAVR & Total & TAVI & SAVR & Total \\
+\midrule
+2012 & 0     & 1\,531 & 1\,531 & 30  & 14  & 44  \\
+2016 & 260   & 2\,179 & 2\,439 & 52  & 216 & 268 \\
+2020 & 763   & 2\,195 & 2\,958 & 95  & 208 & 303 \\
+2024 & 1\,862 & 2\,158 & 4\,020 & 143 & 326 & 469 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{multicols}{2}
+
+\subsection{Pandemic redistribution}
+
+Korea's scaling factor was $\kappa = 1{\cdot}071$ (7$\cdot$1\% above trend), reflecting pent-up demand. Singapore's was $\kappa = 0{\cdot}734$ (26$\cdot$6\% below trend), consistent with stringent circuit-breaker measures.
+
+\subsection{Total Addressable Market}
+
+The TAM---identical across both scenarios---is projected to grow 2$\cdot$7-fold in Korea (3\,768 to 10\,189) and 3$\cdot$4-fold in Singapore (413 to 1\,389) between 2024 and 2050 (table~\ref{tab:tam}). The $\geq$80 cohort drives this expansion, contributing approximately 60\% of TAM by 2050 in both countries.
+
+\end{multicols}
+
+\begin{table}[H]
+\centering
+\caption{Projected Total Addressable Market and $\geq$80 cohort contribution}
+\label{tab:tam}
+\smallskip
+\small
+\begin{tabular}{@{}l rrl rrl@{}}
+\toprule
+& \multicolumn{3}{c}{\textbf{South Korea}} & \multicolumn{3}{c}{\textbf{Singapore}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+ & TAM & $\geq$80 & Share & TAM & $\geq$80 & Share \\
+\midrule
+2024             & 3\,768  & 1\,269 & 33$\cdot$7\% & 413   & 176 & 42$\cdot$6\% \\
+2030             & 5\,182  & 1\,948 & 37$\cdot$6\% & 606   & 286 & 47$\cdot$3\% \\
+2040             & 7\,935  & 3\,908 & 49$\cdot$2\% & 1\,004 & 578 & 57$\cdot$5\% \\
+2050             & 10\,189 & 6\,178 & 60$\cdot$6\% & 1\,389 & 835 & 60$\cdot$1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% --- Figure: TAM projection ---
+% INSTRUCTIONS: Copy step4_projected_tam.png from
+%   website-writeups/assets/korea_50/index_projections/ and
+%   website-writeups/assets/singapore_50/index_projections/
+% into your Overleaf figures/ folder as korea_tam.png and singapore_tam.png
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_tam.png}
+    \caption{South Korea}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_tam.png}
+    \caption{Singapore}
+\end{subfigure}
+\caption{Projected Total Addressable Market (TAM) for aortic valve procedures, 2012--2050, decomposed by age-band contribution. The $\geq$80 cohort (dark shading) dominates long-term growth in both countries.}
+\label{fig:tam}
+\end{figure}
+
+\begin{multicols}{2}
+
+\subsection{TAVI adoption sigmoid}
+
+Table~\ref{tab:sigmoid} presents the fitted sigmoid parameters under both scenarios. The growth rate $k$ and inflection point $t_0$ shift modestly between scenarios, but the qualitative pattern is preserved: Korea shows steep adoption approaching saturation by 2024, while Singapore shows a more gradual trajectory.
+
+\end{multicols}
+
+\begin{table}[H]
+\centering
+\caption{Sigmoid parameters for TAVI share of TAM under two scenarios}
+\label{tab:sigmoid}
+\smallskip
+\small
+\begin{tabular}{@{}l ll ll@{}}
+\toprule
+& \multicolumn{2}{c}{\textbf{South Korea}} & \multicolumn{2}{c}{\textbf{Singapore}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+\textbf{Parameter} & $L_{\max}=0{\cdot}50$ & $L_{\max}=0{\cdot}75$ & $L_{\max}=0{\cdot}50$ & $L_{\max}=0{\cdot}75$ \\
+\midrule
+$k$ (growth rate) & 0$\cdot$502 & 0$\cdot$325 & 0$\cdot$096 & 0$\cdot$093 \\
+$t_0$ (inflection) & 2018$\cdot$4 & 2020$\cdot$5 & 2015$\cdot$1 & 2017$\cdot$8 \\
+Share at 2024 & 47$\cdot$1\% & 53$\cdot$8\% & 35$\cdot$1\% & 35$\cdot$2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% --- Figure: Sigmoid fit ---
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_50_sigmoid.png}
+    \caption{South Korea ($L_{\max}=0{\cdot}50$)}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_75_sigmoid.png}
+    \caption{South Korea ($L_{\max}=0{\cdot}75$)}
+\end{subfigure}
+
+\vspace{6pt}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_50_sigmoid.png}
+    \caption{Singapore ($L_{\max}=0{\cdot}50$)}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_75_sigmoid.png}
+    \caption{Singapore ($L_{\max}=0{\cdot}75$)}
+\end{subfigure}
+\caption{TAVI adoption as a proportion of TAM: observed data (points) and fitted sigmoid curves (lines) under 50\% and 75\% ceiling scenarios for both countries.}
+\label{fig:sigmoid}
+\end{figure}
+
+\begin{multicols}{2}
+
+\subsection{TAVI and SAVR volume forecasts}
+
+Table~\ref{tab:forecasts} presents the central results: projected TAVI and SAVR volumes under both scenarios.
+
+\end{multicols}
+
+\begin{table}[H]
+\centering
+\caption{Projected TAVI and SAVR volumes under two adoption ceiling scenarios}
+\label{tab:forecasts}
+\smallskip
+\small
+\begin{tabular}{@{}l rrrr rrrr@{}}
+\toprule
+& \multicolumn{4}{c}{\textbf{South Korea}} & \multicolumn{4}{c}{\textbf{Singapore}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+& \multicolumn{2}{c}{$L_{\max}=0{\cdot}50$} & \multicolumn{2}{c}{$L_{\max}=0{\cdot}75$} & \multicolumn{2}{c}{$L_{\max}=0{\cdot}50$} & \multicolumn{2}{c}{$L_{\max}=0{\cdot}75$} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+\textbf{Year} & TAVI & SAVR & TAVI & SAVR & TAVI & SAVR & TAVI & SAVR \\
+\midrule
+2024 & 1\,803 & 1\,965 & 2\,028 & 1\,740 & 145 & 268 & 145 & 268 \\
+2030 & 2\,587 & 2\,595 & 3\,687 & 1\,495 & 244 & 362 & 255 & 351 \\
+2035 & 3\,258 & 3\,258 & 4\,837 & 1\,679 & 348 & 451 & 381 & 418 \\
+2040 & 3\,967 & 3\,967 & 5\,939 & 1\,996 & 460 & 544 & 530 & 474 \\
+2050 & 5\,095 & 5\,095 & 7\,641 & 2\,548 & 670 & 718 & 848 & 540 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% --- Figure: Final projections ---
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_50_projection.png}
+    \caption{South Korea ($L_{\max}=0{\cdot}50$)}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_75_projection.png}
+    \caption{South Korea ($L_{\max}=0{\cdot}75$)}
+\end{subfigure}
+
+\vspace{6pt}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_50_projection.png}
+    \caption{Singapore ($L_{\max}=0{\cdot}50$)}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_75_projection.png}
+    \caption{Singapore ($L_{\max}=0{\cdot}75$)}
+\end{subfigure}
+\caption{Final TAVI and SAVR volume projections under 50\% and 75\% adoption ceiling scenarios. Shaded areas represent the range between scenarios. Under 50\%, SAVR grows alongside TAVI; under 75\%, SAVR volumes plateau and begin to decline in Singapore.}
+\label{fig:projections}
+\end{figure}
+
+\begin{multicols}{2}
+
+Several key findings emerge from the dual-scenario analysis:
+
+\begin{enumerate}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Total demand is scenario-invariant.} TAM is identical across both scenarios---10\,189 (Korea) and 1\,389 (Singapore) by 2050---because it is determined entirely by demographics and age-specific risk rates. The adoption ceiling governs only the split, not total demand.
+
+    \item \textbf{SAVR trajectory depends critically on $L_{\max}$.} Under 50\%, SAVR grows 2$\cdot$6-fold in Korea (1\,965 to 5\,095) and 2$\cdot$7-fold in Singapore (268 to 718). Under 75\%, SAVR grows modestly in Korea (1\,740 to 2\,548; 1$\cdot$5-fold) and \emph{declines} in Singapore (268 to 540). This divergence has direct implications for surgical workforce planning.
+
+    \item \textbf{Korea reaches equilibrium faster.} Korea's steep sigmoid reaches the adoption ceiling by $\sim$2025 (50\%) or $\sim$2030 (75\%). Singapore's gradual curve does not approach equilibrium until $\sim$2040 (50\%) or later (75\%).
+
+    \item \textbf{The 50--75\% range bounds a clinically plausible uncertainty interval.} 50\% reflects current practice where SAVR retains a dominant role for younger patients, complex anatomies, and systems with conservative guidelines. 75\% reflects a future where long-term trial data confirm TAVI durability and indications expand to include most AS patients.
+\end{enumerate}
+
+\subsection{ViV TAVI candidate projections}
+
+Table~\ref{tab:viv} presents the downstream Monte Carlo estimates of annual ViV TAVI candidates under both scenarios. Figure~\ref{fig:viv} illustrates the trajectories. Candidate counts represent the structural demand ceiling---patients whose valves have failed while still alive---before application of penetration rates and redo-SAVR subtraction.
+
+\end{multicols}
+
+\begin{table}[H]
+\centering
+\caption{Projected annual ViV TAVI candidates by type and adoption scenario}
+\label{tab:viv}
+\smallskip
+\small
+\begin{tabular}{@{}l rrrr rrrr@{}}
+\toprule
+& \multicolumn{4}{c}{\textbf{South Korea}} & \multicolumn{4}{c}{\textbf{Singapore}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+& \multicolumn{2}{c}{$L_{\max}=0{\cdot}50$} & \multicolumn{2}{c}{$L_{\max}=0{\cdot}75$} & \multicolumn{2}{c}{$L_{\max}=0{\cdot}50$} & \multicolumn{2}{c}{$L_{\max}=0{\cdot}75$} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+\textbf{Year} & TiS & TiT & TiS & TiT & TiS & TiT & TiS & TiT \\
+\midrule
+2025 & 555 & 325 & 553 & 324 & 44 & 31 & 46 & 31 \\
+2030 & 685 & 684 & 578 & 814 & 88 & 48 & 87 & 50 \\
+2035 & 661 & 920 & 428 & 1\,259 & 99 & 62 & 96 & 64 \\
+2040 & 740 & 1\,097 & 400 & 1\,617 & 104 & 81 & 96 & 90 \\
+2045 & 885 & 1\,374 & 454 & 2\,042 & 120 & 109 & 104 & 128 \\
+2050 & 1\,026 & 1\,621 & 517 & 2\,442 & 141 & 139 & 116 & 169 \\
+\midrule
+\textbf{Total} & \multicolumn{2}{c}{\textbf{2\,647}} & \multicolumn{2}{c}{\textbf{2\,959}} & \multicolumn{2}{c}{\textbf{280}} & \multicolumn{2}{c}{\textbf{285}} \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+{\footnotesize TiS = TAVI-in-SAVR candidates; TiT = TAVI-in-TAVI candidates. Totals refer to 2050 annual values.}
+\end{table}
+
+% --- Figure: ViV candidate projections ---
+% INSTRUCTIONS: Copy from website-writeups/assets/
+%   korea_50/figures/viv/lines_candidates/viv_forecast.png → korea_50_viv.png
+%   korea_75/figures/viv/lines_candidates/viv_forecast.png → korea_75_viv.png
+%   singapore_50/figures/viv/lines_candidates/viv_forecast.png → singapore_50_viv.png
+%   singapore_75/figures/viv/lines_candidates/viv_forecast.png → singapore_75_viv.png
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_50_viv.png}
+    \caption{South Korea ($L_{\max}=0{\cdot}50$)}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{korea_75_viv.png}
+    \caption{South Korea ($L_{\max}=0{\cdot}75$)}
+\end{subfigure}
+
+\vspace{6pt}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_50_viv.png}
+    \caption{Singapore ($L_{\max}=0{\cdot}50$)}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{singapore_75_viv.png}
+    \caption{Singapore ($L_{\max}=0{\cdot}75$)}
+\end{subfigure}
+\caption{Projected annual ViV TAVI candidates (TAVI-in-SAVR and TAVI-in-TAVI) under 50\% and 75\% adoption ceiling scenarios. In both countries and scenarios, TAVI-in-TAVI candidates overtake TAVI-in-SAVR candidates by approximately 2030, with the crossover occurring earlier under the 75\% scenario due to faster TAVI index volume accumulation.}
+\label{fig:viv}
+\end{figure}
+
+\begin{multicols}{2}
+
+Key findings from the ViV candidate analysis:
+
+\begin{enumerate}[leftmargin=*, itemsep=4pt]
+    \item \textbf{TAVI-in-TAVI overtakes TAVI-in-SAVR by $\sim$2030.} This crossover is consistent with Ohno et al.'s\textsuperscript{13} findings in the United States and Japan, where TAVI-in-TAVI was projected to dominate by the early 2030s. The similarity across geographies reflects the shared valve durability characteristics rather than country-specific adoption patterns.
+
+    \item \textbf{Total candidates are moderately higher under 75\%.} Korea: 2\,959 vs 2\,647 (+12\%) by 2050; Singapore: 285 vs 280 (+2\%). The increase is driven primarily by TAVI-in-TAVI candidates (more TAVI index implants produce more TAVI valve failures), partially offset by fewer TAVI-in-SAVR candidates (fewer SAVR implants).
+
+    \item \textbf{The composition shifts substantially.} Under 50\%, the 2050 split is approximately 39:61 (TiS:TiT) in Korea and 50:50 in Singapore. Under 75\%, it shifts to 17:83 in Korea and 41:59 in Singapore, reflecting the larger cumulative TAVI pool.
+
+    \item \textbf{Candidate volumes grow continuously through 2050.} Unlike the adoption sigmoid which saturates, the candidate pool continues to grow because the cumulative stock of implanted bioprostheses expands year-on-year. This confirms that ViV demand will be a sustained and growing challenge, not a transient phenomenon.
+\end{enumerate}
+
+
+% ============================================================
+%  DISCUSSION
+% ============================================================
+\section{Discussion}
+
+This study presents a demographically anchored forecasting framework for TAVI and SAVR volumes, applied to two Asian healthcare systems under two adoption scenarios. The work directly responds to the editorial by Yoon et al.,\textsuperscript{14} which called for forecasting models that account for evolving socioeconomic factors---specifically the changing TAVR-to-SAVR ratio, regional guidelines, and reimbursement models.
+
+Our principal contribution is methodological: separating the forecast into a \textbf{demographically determined denominator} (TAM) and a \textbf{socioeconomically governed numerator} (adoption share). This decomposition makes explicit the interaction identified by the editorial:
+%
+\begin{equation}
+\hat{N}_{\mathrm{TAVI}}(t) = \underbrace{\hat{S}_{\mathrm{TAVI}}(t)}_{\text{Socioeconomic}} \times \underbrace{\mathrm{TAM}(t)}_{\text{Demographic}}
+\end{equation}
+%
+The $L_{\max}$ parameter functions as a single knob that encapsulates the net effect of the socioeconomic determinants Yoon et al.\ highlighted: guideline conservatism lowers $L_{\max}$; reimbursement expansion raises it; device cost reductions raise it; SVD concerns lower it. By running scenarios at different $L_{\max}$ values, planners can systematically assess how each factor would affect volume trajectories.
+
+\subsection{Relationship to Ohno et al.}
+
+Our framework extends the Monte Carlo engine of Ohno et al.\textsuperscript{13} in three respects. First, whereas Ohno et al.\ take index procedure volumes as exogenous inputs, our framework provides those upstream volumes as demographically grounded, scenario-specific projections. The combined pipeline---demographic TAM $\to$ sigmoid adoption $\to$ index volumes $\to$ Monte Carlo ViV simulation---creates a fully integrated forecasting system in which socioeconomic assumptions propagate consistently from index procedures through to ViV estimation.
+
+Second, we explicitly model the distinction between ViV \emph{candidates} (patients whose valves have structurally deteriorated while still alive) and \emph{realised} ViV procedures (candidates who actually undergo reintervention). This is achieved through time-varying penetration rates that reflect the expected growth in ViV adoption over the projection horizon. Reporting both quantities gives planners both the structural demand ceiling and the expected procedural workload.
+
+Third, we incorporate redo-SAVR as a competing reintervention pathway. Rather than applying per-patient redo-SAVR probabilities (which would require uncertain assumptions about individual routing decisions), we project absolute redo-SAVR volumes from registry-derived per-capita risk rates applied to the evolving population structure. These are subtracted from realised TAVI-in-SAVR volumes, yielding net ViV TAVI demand. This approach ensures that the redo-SAVR trajectory is anchored to the same demographic dynamics that drive index volumes.
+
+The application to Korea and Singapore extends the geographic scope of ViV forecasting to East and Southeast Asian markets not covered by the US--Japan analysis. The TAVI-in-TAVI crossover timing ($\sim$2030) is consistent between our Asian projections and the US/Japan results of Ohno et al., suggesting that valve durability---rather than adoption dynamics---is the primary determinant of ViV composition.
+
+\subsection{Clinical implications of dual-scenario analysis}
+
+The divergence between 50\% and 75\% scenarios has concrete implications for both surgical workforce and ViV planning:
+
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Under 50\%}: SAVR demand grows 2$\cdot$6--2$\cdot$7-fold by 2050. Cardiac surgical training programmes and operating theatre capacity must \emph{expand}. ViV candidates reach 2\,647 (Korea) and 280 (Singapore) annually, with a balanced TiS/TiT composition.
+    \item \textbf{Under 75\%}: SAVR demand grows modestly (Korea) or declines (Singapore), but remains substantial. ViV candidates are moderately higher (2\,959 and 285), but the composition shifts heavily toward TAVI-in-TAVI (83\% of Korean candidates by 2050), which has different procedural complexity implications.
+    \item \textbf{Total ViV burden grows regardless of scenario}: The 50--75\% range produces only a 2--12\% difference in total ViV candidates, because the increase in TAVI-in-TAVI failures is largely offset by fewer SAVR failures. The total reintervention burden is therefore primarily determined by demographics, not the adoption pathway.
+\end{itemize}
+
+\subsection{The demographic multiplier}
+
+Even if TAVI adoption froze at current levels, index volumes would grow 2--3$\times$ by 2050 solely from population ageing. The downstream effect is amplified: ViV candidates grow from $\sim$600 to $\sim$2\,700 in Korea over the same period, because the cumulative stock of implanted bioprostheses expands year-on-year while valve durability remains biologically constrained. This finding underscores that ViV demand is not merely a consequence of TAVI adoption but a structural demographic phenomenon.
+
+\subsection{Limitations}
+
+The model uses a fixed $L_{\max}$ for each scenario rather than a time-varying ceiling. The TAM projection is deterministic. The model operates at national level without sub-national heterogeneity. Risk rates capture both incidence and treatment propensity as a single variable. With 9--12 years of data, out-of-sample validation is constrained. The Monte Carlo engine assumes current-generation valve durability distributions; improvements in valve technology could reduce future ViV candidate rates. The redo-SAVR projection assumes that per-capita redo-SAVR risk rates remain stable at 2023--2024 levels; changes in surgical technique or patient selection could alter these rates. Penetration rate assumptions for ViV adoption are informed by current trends but are inherently uncertain over a 25-year horizon.
+
+\subsection{Conclusion}
+
+We present an end-to-end forecasting framework that links demographically anchored index volume projections to downstream ViV estimation---including both candidate pools and realised procedure volumes after redo-SAVR subtraction---explicitly parameterising the socioeconomic determinants identified by Yoon et al.\textsuperscript{14} as missing from prior models. Applied to Korea and Singapore under bounding scenarios, the framework reveals that: (1) total index demand is demographically determined (2$\cdot$7--3$\cdot$4$\times$ growth by 2050); (2) the TAVI/SAVR split is governed by the adoption ceiling; (3) ViV TAVI candidates will reach 2\,647--2\,959 annually in Korea and 280--285 in Singapore by 2050, with TAVI-in-TAVI dominating by the early 2030s; and (4) redo-SAVR, modelled as a demographically anchored competing pathway, provides a principled adjustment from candidate counts to net realised ViV demand. The framework provides a transparent, scenario-based platform for integrated capacity planning across index procedures, reinterventions, and surgical reoperations.
+
+\end{multicols}
+
+\vspace{12pt}
+
+% ============================================================
+%  REFERENCES
+% ============================================================
+\section{References}
+
+\small
+\begin{enumerate}[leftmargin=*, label={\arabic*.}, itemsep=1pt]
+    \item Osnabrugge RLJ, Mylotte D, Head SJ, et al. Aortic stenosis in the elderly: disease prevalence and number of candidates for transcatheter aortic valve replacement. \textit{J Am Coll Cardiol} 2013; \textbf{62}: 1002--12.
+    \item Nkomo VT, Gardin JM, Skelton TN, et al. Burden of valvular heart diseases: a population-based study. \textit{Lancet} 2006; \textbf{368}: 1005--11.
+    \item Ross J, Braunwald E. Aortic stenosis. \textit{Circulation} 1968; \textbf{38}: 61--7.
+    \item Cribier A, Eltchaninoff H, Bash A, et al. Percutaneous transcatheter implantation of an aortic valve prosthesis for calcific aortic stenosis. \textit{Circulation} 2002; \textbf{106}: 3006--8.
+    \item Smith CR, Leon MB, Mack MJ, et al. Transcatheter versus surgical aortic-valve replacement in high-risk patients. \textit{N Engl J Med} 2011; \textbf{364}: 2187--98.
+    \item Leon MB, Smith CR, Mack MJ, et al. Transcatheter or surgical aortic-valve replacement in intermediate-risk patients. \textit{N Engl J Med} 2016; \textbf{374}: 1609--20.
+    \item Reardon MJ, Van Mieghem NM, Popma JJ, et al. Surgical or transcatheter aortic-valve replacement in intermediate-risk patients. \textit{N Engl J Med} 2017; \textbf{376}: 1321--31.
+    \item Mack MJ, Leon MB, Thourani VH, et al. Transcatheter aortic-valve replacement with a balloon-expandable valve in low-risk patients. \textit{N Engl J Med} 2019; \textbf{380}: 1695--705.
+    \item Popma JJ, Deeb GM, Yakubov SJ, et al. Transcatheter aortic-valve replacement with a self-expanding valve in low-risk patients. \textit{N Engl J Med} 2019; \textbf{380}: 1706--15.
+    \item United Nations Department of Economic and Social Affairs, Population Division. World Population Prospects 2024. New York: United Nations, 2024.
+    \item Capodanno D, Petronio AS, Prendergast B, et al. Standardized definitions of structural deterioration and valve failure in assessing long-term durability of transcatheter and surgical aortic bioprosthetic valves. \textit{Eur Heart J} 2017; \textbf{38}: 3382--90.
+    \item Dvir D, Webb JG, Bleiziffer S, et al. Transcatheter aortic valve implantation in failed bioprosthetic surgical valves. \textit{JAMA} 2014; \textbf{312}: 162--70.
+    \item Ohno Y, Kawamori H, Kuno T, et al. Predicting future valve-in-valve transcatheter aortic valve replacement volume in the United States and Japan. \textit{JACC Cardiovasc Interv} 2025; DOI: pending.
+    \item Yoon SH. Evolving socioeconomic factors causing potential drifts in ViV-TAVR trend. \textit{JACC Cardiovasc Interv} 2025; DOI: pending.
+\end{enumerate}
+
+\end{document}
